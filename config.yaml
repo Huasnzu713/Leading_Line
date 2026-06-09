@@ -1,0 +1,61 @@
+# Leading-Line 算法的全部可调参数
+# 注释中 *_bgr 表示这是 OpenCV 内部用的 BGR 顺序（不是 RGB）
+
+camera:
+  index: 0                # USB 摄像头设备号
+  width: 640              # 期望分辨率
+  height: 480
+  fps: 30
+
+colors:
+  road:                   # 谷仓道路（蓝色）
+    hsv_lower: [100, 50, 50]   # H∈[100,130]=蓝, S>50=够饱和, V>50=别太暗
+    hsv_upper: [130, 255, 255]
+  floor:                  # 谷仓地面（黄/棕色谷物，禁行）
+    hsv_lower: [0, 8, 15]      # 放宽：远景灰暗谷物 S 可低至 8-14，V 可低至 99
+    hsv_upper: [80, 255, 255]  # H 上限 80 仍距蓝色道路 H=100+ 有 20 点安全带
+
+roi:                      # Region Of Interest：仅在该矩形内处理
+  top_ratio: 0.40         # 忽略上方 40% （天空/远景）
+  bottom_ratio: 0.95      # 截至 95%
+  left_ratio: 0.0
+  right_ratio: 1.0
+
+morphology:               # 二值掩码的形态学清理
+  kernel_size: 5
+  opening_iter: 1         # 去椒盐
+  closing_iter: 2         # 填洞
+
+filter:                   # 连通块过滤：消除人脸/屏边/墙面等零碎误识别
+  min_road_area_px: 500   # 小于这个像素数的道路掩码直接当噪声扔掉
+
+path:                     # 路径采样与平滑
+  num_samples: 20         # 在 ROI 内均匀采样的行数
+  smooth_window: 7        # 滑动平均窗口（奇数）
+  poly_degree: 2          # 多项式拟合阶数；超过 2 容易在直线上"过拟合出曲线"
+
+controller:               # 由路径 → 控制量
+  lookahead_row_from_bottom: 8   # 取路径上"自下往上第 8 个采样行"做前瞻
+  max_steer_deg: 30.0
+  base_speed: 0.30
+  min_speed: 0.10
+  curvature_k: 0.6        # 曲率越大、车速越低
+
+visualization:
+  path_color_bgr: [0, 255, 0]     # 绿（BGR）—— 中心引导线
+  path_thickness: 4
+  edge_color_bgr: [0, 0, 255]     # 红（BGR）—— 道路区域外轮廓（road_mask 的 findContours）
+  edge_thickness: 2               # 外轮廓线宽
+  road_overlay_bgr: [47, 130, 238]  # 橙（BGR），已停用
+  road_overlay_alpha: 0.0         # 设为 0 → 不再覆盖蓝色道路
+  show_hud: true                  # 左上角显示 steer / speed
+
+temporal:                         # 跨帧时域平滑（解决"路径在画面上抖动"）
+  enabled: true
+  alpha: 0.40                     # EMA 系数：越小越平滑但越迟钝；越大越跟手但越抖
+  reset_on_no_road: true         # 道路消失时重置历史，避免拖影
+
+runtime:
+  print_to_stdout: true   # 控制台打印每帧的 steer / speed
+  window_name: "Leading Line"
+  exit_key: 27            # ESC 退出

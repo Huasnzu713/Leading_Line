@@ -1,0 +1,19 @@
+# QR + 状态机系统的可调参数
+
+camera:
+  index: 0                # 摄像头设备号
+  width: 1280
+  height: 720
+  fps: 30
+
+state_machine:
+  policy_timeout_s: 30.0   # 任何策略超过这个时间还没自然结束，强制 ERROR（防卡死）
+  test_ticks: 3           # test 模式下让状态机走几轮 tick（让 DECODED→POLICY_ACTIVE→REPORTING 完整跑一遍）
+
+ui:
+  window_name: "QR State Machine"
+  exit_key: 27            # ESC
+  save_key: "s"           # 抓帧
+
+# 注意：策略白名单见 qr_policy.py 的 KNOWN_POLICIES。
+# 想加新策略：先在那里加名字，再在 qr_state_machine._apply_policy 里写动作。

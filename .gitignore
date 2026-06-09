@@ -1,0 +1,15 @@
+# Python 字节码
+__pycache__/
+*.py[cod]
+*.pyo
+
+# 测试 / 运行输出（每次跑都会重新生成，不该入版本）
+qr_result/
+test_result/
+.pytest_cache/
+
+# 编辑器 / 系统
+.vscode/
+.claude/
+.DS_Store
+Thumbs.db
