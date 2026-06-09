@@ -78,6 +78,15 @@ python main.py --source path/to/video.mp4
 
 # 调试模式：2x2 网格（原图/道路掩码/地面掩码/结果）
 python main.py --source tests/synth.png --debug
+
+# 生成测试 QR 样本到 tests/qr_state_machine_samples/
+python qr_system/qr_make_test.py
+
+# test 模式：读图识别
+python qr_system/qr_main.py --mode test  --source tests/qr_state_machine_samples/turn_left.png
+
+# camera 模式：实时
+python qr_system/qr_main.py --mode camera
 ```
 
 可视化窗口中按 **ESC** 退出，按 **s** 保存当前帧到 `test_result/`，按 **d** 切换调试模式。
@@ -146,14 +155,3 @@ python tests/make_synth.py     # 重新生成合成图 tests/synth.png
 `CRUISE` 策略输出 `(NaN, NaN)` 表示"解绑，由引导线算法接管"。
 
 详见 [qr_system/README.md](qr_system/README.md)。
-
-```bash
-# 生成测试 QR 样本到 tests/qr_state_machine_samples/
-python qr_system/qr_make_test.py
-
-# test 模式：读图识别
-python qr_system/qr_main.py --mode test  --source tests/qr_state_machine_samples/turn_left.png
-
-# camera 模式：实时
-python qr_system/qr_main.py --mode camera
-```
