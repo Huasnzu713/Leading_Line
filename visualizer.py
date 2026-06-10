@@ -13,6 +13,17 @@ def _draw_road_overlay(
     return cv2.addWeighted(overlay, alpha, frame, 1.0 - alpha, 0)
 
 
+def _draw_floor_overlay(
+    frame: np.ndarray, floor_mask: np.ndarray, color_bgr, alpha: float
+) -> np.ndarray:
+    """谷地（地面）半透明叠加。alpha=0 时不叠加，直接返回原图。"""
+    if alpha <= 0:
+        return frame
+    overlay = frame.copy()
+    overlay[floor_mask > 0] = color_bgr
+    return cv2.addWeighted(overlay, alpha, frame, 1.0 - alpha, 0)
+
+
 def _draw_polyline(
     frame: np.ndarray, points_xy: np.ndarray, color_bgr, thickness: int
 ) -> np.ndarray:
@@ -105,12 +116,14 @@ def draw(
     speed: float,
     lookahead: tuple[float, float] | None,
     viz_cfg: dict,
+    floor_mask: np.ndarray | None = None,
 ) -> np.ndarray:
     """画：道路区域外轮廓 → 中心引导线 → 前瞻点 → HUD。
 
     - 道路外轮廓：road_mask 的 findContours，画"道路 vs 谷物"完整分界
     - 中心引导线：path_planner 算的 center 折线，画"行驶路径"（在道路内部）
     - 不再画 path_planner 算的 left/right 折线 —— 它和外轮廓功能重复
+    - floor_mask：可选，传了就按 viz_cfg["floor_overlay_*"] 叠加谷物
     """
     out = frame_bgr.copy()
     out = _draw_road_overlay(
@@ -119,6 +132,14 @@ def draw(
         tuple(viz_cfg["road_overlay_bgr"]),
         float(viz_cfg["road_overlay_alpha"]),
     )
+    # 谷地叠加：可选；alpha=0 或没设 floor_mask 时跳过
+    if floor_mask is not None and "floor_overlay_bgr" in viz_cfg:
+        out = _draw_floor_overlay(
+            out,
+            floor_mask,
+            tuple(viz_cfg["floor_overlay_bgr"]),
+            float(viz_cfg.get("floor_overlay_alpha", 0.0)),
+        )
     out = draw_road_contour(
         out,
         road_mask,
@@ -166,7 +187,7 @@ def draw_debug(
     floor_vis = cv2.addWeighted(floor_vis, 0.4, frame_bgr, 0.6, 0)
 
     # 最终可视化（走 draw()，与正常模式完全一致）
-    final = draw(frame_bgr, road_mask, edges, steer_deg, speed, lookahead, viz_cfg)
+    final = draw(frame_bgr, road_mask, edges, steer_deg, speed, lookahead, viz_cfg, floor_mask)
 
     # 2×2 网格：上排 原图/道路掩码；下排 地面掩码/最终结果
     top = np.hstack([frame_bgr, road_vis])

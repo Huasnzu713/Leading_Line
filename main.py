@@ -167,7 +167,8 @@ def run(cfg: dict, source: str | None, debug: bool = False) -> None:
                 )
             else:
                 vis = visualizer.draw(
-                    frame, road_mask, edges, steer, speed, lookahead, cfg["visualization"]
+                    frame, road_mask, edges, steer, speed, lookahead, cfg["visualization"],
+                    floor_mask=floor_mask,
                 )
             last_vis = vis
             cv2.imshow(window_name, vis)

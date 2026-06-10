@@ -2,5 +2,5 @@ opencv-python>=4.5
 numpy>=1.21
 PyYAML>=6.0
 
-# QR 策略系统：生成测试用 QR 码；解码仍走 OpenCV 自带 QRCodeDetector
-qrcode>=7.0
+# 双端 UI：PC 端 Qt 界面
+PySide6>=6.6

@@ -1,0 +1,49 @@
+# PC 端配置示例
+# 关键字段：network.jetson_ip / video_port / cmd_port
+# modes 段：UI 单选模式用，至少要列全 cfg 里支持的所有模式
+
+# --- 网络：PC 连 Jetson 的目标地址 ---
+network:
+  jetson_ip: "192.168.1.50"    # jetson 在局域网里的 IP
+  video_port: 9000             # 与 jetson 端一致
+  cmd_port: 9001               # 与 jetson 端一致
+
+# --- 模式定义（与 config_jetson.yaml / config.yaml 保持一致）---
+# PC 这边不需要 HSV / 路径规划参数，但需要列出 label 给 UI 显示
+modes:
+  blue_path:
+    label: "蓝色路径模式"
+    colors:
+      road: { hsv_lower: [100, 50, 50], hsv_upper: [130, 255, 255] }
+      floor: { hsv_lower: [0, 8, 15],   hsv_upper: [80, 255, 255] }
+    visualization:
+      path_color_bgr: [0, 255, 0]
+      edge_color_bgr: [0, 0, 255]
+      road_overlay_bgr: [47, 130, 238]
+      road_overlay_alpha: 0.0
+      floor_overlay_bgr: [0, 165, 255]
+      floor_overlay_alpha: 0.0
+  green_path:
+    label: "绿色路径模式"
+    colors:
+      road: { hsv_lower: [35, 50, 50],  hsv_upper: [85, 255, 255] }
+      floor: { hsv_lower: [0, 8, 15],   hsv_upper: [80, 255, 255] }
+    visualization:
+      path_color_bgr: [0, 255, 0]
+      edge_color_bgr: [0, 255, 0]
+      road_overlay_bgr: [0, 180, 0]
+      road_overlay_alpha: 0.0
+      floor_overlay_bgr: [0, 165, 255]
+      floor_overlay_alpha: 0.0
+  test:
+    label: "测试模式"
+    colors:
+      road: { hsv_lower: [0, 0, 40],    hsv_upper: [179, 80, 180] }
+      floor: { hsv_lower: [0, 0, 200],  hsv_upper: [179, 60, 255] }
+    visualization:
+      path_color_bgr: [128, 128, 128]
+      edge_color_bgr: [80, 80, 80]
+      road_overlay_bgr: [128, 128, 128]
+      road_overlay_alpha: 0.0
+      floor_overlay_bgr: [255, 255, 255]
+      floor_overlay_alpha: 0.0
