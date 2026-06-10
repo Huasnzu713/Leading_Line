@@ -64,6 +64,26 @@ def add_noise(img: np.ndarray, sigma: float = 25.0) -> np.ndarray:
     return out
 
 
+def make_colored_arrow(direction: str, size: int = 300,
+                      fg_bgr: tuple[int, int, int] = (30, 30, 200),
+                      bg_bgr: tuple[int, int, int] = (230, 230, 230)) -> np.ndarray:
+    """生成一张 BGR 彩色的非黑箭头图, 用于验证"只接受黑色"过滤.
+
+    direction: 'up' / 'left' / 'right' / 'down'
+    fg_bgr / bg_bgr: 前景 / 背景的 BGR 颜色.
+    """
+    base_angle = {"right": 0.0, "up": 90.0, "left": 180.0, "down": -90.0}[direction]
+    pts_math = _rotate(_ARROW_RIGHT_TEMPLATE * size, base_angle)
+    pts_img = pts_math.copy()
+    pts_img[:, 1] = -pts_img[:, 1]
+    pts_img += [size / 2.0, size / 2.0]
+    pts_img = pts_img.astype(np.int32)
+
+    img = np.full((size, size, 3), bg_bgr, dtype=np.uint8)
+    cv2.fillPoly(img, [pts_img], fg_bgr)
+    return img
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="生成示例箭头图片")
     parser.add_argument("--out", default="samples", help="输出目录")
@@ -90,6 +110,17 @@ def main() -> None:
     for d, rot in (("up", 15.0), ("right", -20.0)):
         path = os.path.join(args.out, f"arrow_{d}_rot{int(rot):+d}.png")
         cv2.imwrite(path, make_arrow(d, size=args.size, extra_rotation=rot))
+        print(f"  wrote {path}")
+
+    # 彩色反例: 红色箭头, 算法应拒绝 (灰度均值 ~76, 仍可被拒; 蓝/绿色更明显)
+    for d in ("up", "right"):
+        path = os.path.join(args.out, f"arrow_{d}_red.png")
+        cv2.imwrite(path, make_colored_arrow(d, size=args.size, fg_bgr=(30, 30, 200)))
+        print(f"  wrote {path}")
+    # 浅灰反例: 几乎不黑, 一定被拒
+    for d in ("up",):
+        path = os.path.join(args.out, f"arrow_{d}_gray.png")
+        cv2.imwrite(path, make_colored_arrow(d, size=args.size, fg_bgr=(150, 150, 150)))
         print(f"  wrote {path}")
 
     print(f"\nDone. {len(os.listdir(args.out))} images in {args.out}/")

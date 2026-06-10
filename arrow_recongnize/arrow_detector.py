@@ -47,8 +47,8 @@ class ArrowResult:
 
 # ---------- 内部辅助 ----------
 
-def _preprocess(img: np.ndarray) -> np.ndarray:
-    """返回箭头为白色 (255), 背景为黑色 (0) 的二值图."""
+def _preprocess(img: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """返回 (箭头为白 / 背景为黑的二值图, 灰度图)."""
     if img.ndim == 3:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:
@@ -61,7 +61,7 @@ def _preprocess(img: np.ndarray) -> np.ndarray:
     # 闭运算填掉箭头内部的小空洞 / 毛刺
     kernel = np.ones((3, 3), np.uint8)
     binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-    return binary
+    return binary, gray
 
 
 def _largest_contour(binary: np.ndarray, min_area_frac: float = 0.002) -> Optional[np.ndarray]:
@@ -138,11 +138,27 @@ def _classify_angle(angle_deg: float) -> Tuple[str, float]:
 
 # ---------- 对外接口 ----------
 
-def detect_arrow(img: np.ndarray) -> Optional[ArrowResult]:
-    """识别图中最大的箭头, 返回方向; 找不到合适轮廓时返回 None."""
-    binary = _preprocess(img)
+def detect_arrow(img: np.ndarray, min_darkness: float = 80.0) -> Optional[ArrowResult]:
+    """识别图中最大的黑色箭头, 返回方向; 找不到合适轮廓或不够黑时返回 None.
+
+    参数
+    ----
+    img : BGR / 灰度图
+    min_darkness : 0~255, 轮廓内平均灰度必须 <= 该值才算"黑色箭头".
+        默认 80, 即"中等灰度以上"会被过滤掉; 想严格只接受纯黑可调到 ~50.
+    """
+    binary, gray = _preprocess(img)
     contour = _largest_contour(binary)
     if contour is None:
+        return None
+
+    # 新增: 校验箭头区域必须够黑. 用轮廓填出的掩码求灰度均值, 高于阈值则丢弃.
+    #   - 这样红色/绿色等其他颜色箭头(灰度偏高)会被直接拒绝
+    #   - 深色阴影/墙面/头发等"形状像箭头但颜色不够黑"的误报也会被压住
+    mask = np.zeros(gray.shape, dtype=np.uint8)
+    cv2.drawContours(mask, [contour], -1, 255, thickness=-1)
+    mean_val = float(cv2.mean(gray, mask=mask)[0])
+    if mean_val > min_darkness:
         return None
 
     M = cv2.moments(contour)
