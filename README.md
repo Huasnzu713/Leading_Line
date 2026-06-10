@@ -58,8 +58,11 @@ HSV 颜色分割 (cv2.inRange) ──► 道路掩码 + 地面掩码
 | `requirements.txt` | Python 依赖清单 |
 | `tests/` | 9 个回归测试 + 算法样本图（5 张 PNG） |
 | `tests/qr_state_machine_samples/` | QR 系统测试样本（7 张 PNG） |
-| `qr_system/` | QR 码驱动的状态机策略系统（见 §7） |
+| `qr_system/` | QR 码驱动的状态机策略系统（见 §8） |
 | `qr_system/tests/` | QR 系统的 3 个测试文件 |
+| `arrow_recongnize/` | 基于 OpenCV 几何方法的箭头方向识别小工具（见 §9） |
+| `arrow_recongnize/samples/` | 自动生成的 9 张示例箭头图（4 方向 × 干净/噪声/旋转） |
+| `arrow_recongnize/out/` | 跑 `detect_image.py --save-dir` 产生的标注图 |
 
 ## 3. 安装与运行
 
@@ -155,3 +158,51 @@ python tests/make_synth.py     # 重新生成合成图 tests/synth.png
 `CRUISE` 策略输出 `(NaN, NaN)` 表示"解绑，由引导线算法接管"。
 
 详见 [qr_system/README.md](qr_system/README.md)。
+
+## 9. 箭头方向识别（`arrow_recongnize/`）
+
+轻量、零训练数据的箭头方向识别小工具，基于 OpenCV 几何方法（Otsu 二值化 + 凸包多边形近似 + 内角打分）。  
+能识别 **前 / 左 / 右** 三向，给出像素级尖端坐标和 0~1 置信度；摄像头实时模式与图片批量模式都可用。
+
+```bash
+cd arrow_recongnize
+pip install -r requirements.txt   # 只需 opencv-python、numpy
+
+# 1. 生成示例图到 samples/（已带 9 张，可跳过）
+python generate_samples.py
+
+# 2. 对 samples/ 下所有图做识别并打印
+python detect_image.py samples/*.png
+
+# 3. 把标注后的图存到 out/
+python detect_image.py samples/*.png --save-dir out
+
+# 4. 摄像头实时识别（按 q 退出，按 s 保存当前帧）
+python detect_webcam.py
+```
+
+示例输出：
+
+```
+samples/arrow_up.png:        方向=前    角度=  89.3°  置信度=0.86
+samples/arrow_left.png:      方向=左    角度= 179.3°  置信度=0.86
+samples/arrow_right.png:     方向=右    角度=   0.7°  置信度=0.86
+samples/arrow_up_rot+15.png: 方向=前    角度= 105.3°  置信度=0.69
+samples/arrow_down.png:      方向=未知  角度= -90.7°  置信度=0.37
+```
+
+完整算法说明、9 张样本的验证结果表、API 字段、已知局限，详见 [arrow_recongnize/README.md](arrow_recongnize/README.md)。
+
+### 与引导线算法对接
+
+`arrow_detector.detect_arrow(frame)` 接受与 `main.py` 同一份摄像头帧 BGR，输出 `(direction, angle_deg, confidence, ...)`。  
+典型做法是在 `process_frame` 之前/之后加一段：
+
+```python
+import arrow_recongnize.arrow_detector as arrow_detector
+arrow = arrow_detector.detect_arrow(frame)
+if arrow is not None and arrow.confidence >= 0.5:
+    # 用 arrow.direction / angle_deg 覆盖 controller 的输出
+    # 例如: 看到"左"则把 steer_deg 替换为 -20，duration 由后续状态机管
+    pass
+```
