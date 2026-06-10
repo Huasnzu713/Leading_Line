@@ -105,3 +105,20 @@ ros:
 jetson_runtime:
   jpeg_quality: 70              # 0-100；高 = 清晰 + 大包
   fps_cap: 30.0                 # 推流帧率上限，避免占满网卡
+
+# --- 覆盖层（路径算法之上的箭头 + QR 识别）---
+# 全部可关；关掉后对应模块静默 no-op，不影响 path 输出
+overrides:
+  arrow:
+    enabled: true               # 默认开：每帧 detect_arrow()
+    min_darkness: 80.0          # 黑色校验阈值（> 即拒）
+    min_confidence: 0.5         # 低于此置信度不覆盖 steer
+    override_ttl_s: 0.6         # 箭头结果保留时长（让单帧检测能持续生效）
+    steer_map:                  # 方向 → 强制转向角（度）
+      "前": 0.0
+      "左": -22.0
+      "右": 22.0
+  qr:
+    enabled: true               # 默认开：每 N 帧解一次 QR
+    decode_every_n: 6           # 解码间隔（CPU 重，不每帧解）
+    policy_timeout_s: 30.0      # QR 状态机策略超时时长

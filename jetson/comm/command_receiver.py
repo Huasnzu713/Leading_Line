@@ -1,9 +1,14 @@
-"""Jetson ← PC 的 TCP 命令接收器。
+"""Jetson ← PC 的 TCP 命令接收器（兼服务器端文本回推）。
 
 协议见 protocol/messages.py：
 - 一条文本命令一行（"\\n" 结束）
-- 命令类型：MODE / START / STOP / PING / QUIT
-- 服务器端 accept 多个连接（Jetson 端只服务一个 PC，理论上也只能一个）
+- 命令类型：MODE / START / STOP / PING / QUIT / ACK
+- 服务器端 accept 多个连接（Jetson 端理论上只服务一个 PC，但允许多个调试时连）
+
+主动回推（Jetson → PC）：
+- 收到 ``PING`` → 回 ``PONG <ts>``
+- 主循环调 ``push_status`` / ``push_info`` → 广播到所有已连接客户端
+- 客户端断线时通过 ``on_disconnect`` 回调通知
 
 线程模型：
 - 后台 daemon 线程跑 accept loop，主线程通过队列拿命令
@@ -17,12 +22,9 @@ import queue
 import socket
 import socketserver
 import threading
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Tuple
 
 from protocol import (
-    STATE_IDLE,
-    STATE_RUNNING,
-    STATE_STOPPED,
     encode_status,
     parse_line,
 )
@@ -40,6 +42,7 @@ class _CmdHandler(socketserver.BaseRequestHandler):
         sock.settimeout(1.0)
         peer = self.client_address
         log.info("PC 已连接: %s:%s", peer[0], peer[1])
+        srv._register_client(sock, peer)
         srv._on_connect(peer)
         buf = b""
         try:
@@ -58,15 +61,17 @@ class _CmdHandler(socketserver.BaseRequestHandler):
                     if cmd is None:
                         continue
                     log.info("收到命令: %s %r", cmd.kind, cmd.payload)
+                    # PING 单独处理：立即回 PONG（不丢进队列）
+                    if cmd.kind == "PING":
+                        srv._safe_send(sock, encode_status("PONG", cmd.payload))
+                        continue
                     srv._enqueue(cmd)
                     # 回包：让 PC 知道 Jetson 收到了
-                    try:
-                        sock.sendall(encode_status("ACK", cmd.kind))
-                    except OSError:
-                        break
+                    srv._safe_send(sock, encode_status("ACK", cmd.kind))
         except OSError as e:
             log.warning("TCP 连接异常: %s", e)
         finally:
+            srv._unregister_client(sock)
             srv._on_disconnect(peer)
             try:
                 sock.close()
@@ -88,6 +93,7 @@ class CommandReceiver(socketserver.ThreadingTCPServer):
         while True:
             cmd = rx.get(timeout=0.1)
             if cmd: handle(cmd)
+        rx.push_status("RUNNING", "blue_path")  # 主动推
     """
 
     allow_reuse_address = True
@@ -106,6 +112,9 @@ class CommandReceiver(socketserver.ThreadingTCPServer):
         self._thread: Optional[threading.Thread] = None
         self._on_connect_cb = on_connect
         self._on_disconnect_cb = on_disconnect
+        # 已注册客户端（sockets 列表 + lock）
+        self._clients_lock = threading.Lock()
+        self._clients: List[Tuple[socket.socket, Tuple]] = []
 
     # ---- 内部回调（被 handler 调用） ----
 
@@ -125,6 +134,52 @@ class CommandReceiver(socketserver.ThreadingTCPServer):
                 self._on_disconnect_cb(peer)
             except Exception as e:  # noqa: BLE001
                 log.warning("on_disconnect 回调异常: %s", e)
+
+    # ---- 客户端注册 / 推送 ----
+
+    def _register_client(self, sock: socket.socket, peer: Tuple) -> None:
+        with self._clients_lock:
+            self._clients.append((sock, peer))
+
+    def _unregister_client(self, sock: socket.socket) -> None:
+        with self._clients_lock:
+            self._clients = [(s, p) for (s, p) in self._clients if s is not sock]
+
+    @staticmethod
+    def _safe_send(sock: socket.socket, data: bytes) -> None:
+        try:
+            sock.sendall(data)
+        except OSError:
+            pass  # 客户端断线，handler 那边会清理
+
+    def has_clients(self) -> bool:
+        with self._clients_lock:
+            return len(self._clients) > 0
+
+    def client_count(self) -> int:
+        with self._clients_lock:
+            return len(self._clients)
+
+    def push_status(self, kind: str, payload: str = "") -> int:
+        """向所有已连接客户端推一条 STATUS/INFO 文本。
+
+        返回实际成功发送的客户端数。
+        """
+        if not self.has_clients():
+            return 0
+        data = encode_status(kind, payload)
+        n_ok = 0
+        # 拷贝一份再遍历，避免回调里 list 被改
+        with self._clients_lock:
+            clients = list(self._clients)
+        for sock, _peer in clients:
+            try:
+                sock.sendall(data)
+                n_ok += 1
+            except OSError:
+                # 客户端断了；handler 的 recv 也会抛，最后会 unregister
+                pass
+        return n_ok
 
     # ---- 公开 API ----
 
@@ -150,6 +205,18 @@ class CommandReceiver(socketserver.ThreadingTCPServer):
             self.server_close()
         except Exception:  # noqa: BLE001
             pass
+        # 主动关所有客户端连接
+        with self._clients_lock:
+            for sock, _ in self._clients:
+                try:
+                    sock.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+                try:
+                    sock.close()
+                except OSError:
+                    pass
+            self._clients.clear()
         if self._thread:
             self._thread.join(timeout=2.0)
         log.info("TCP 命令服务已关闭")

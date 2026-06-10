@@ -267,12 +267,18 @@ class MainWindow(QMainWindow):
         s = self.video.stats()
         self.lbl_fps.setText(f"入站帧率：{s['fps_in']:.1f} FPS")
         self.lbl_packets.setText(f"入站/丢包：{s['decoded']} / {s['drops']}")
-        if self.sender.is_connected():
-            self.lbl_connection.setText("连接：已连 Jetson")
+        # 心跳 / 状态
+        cs = self.sender.stats()
+        if cs["connected"]:
+            rtt = cs["rtt_ms"]
+            rtt_txt = f"延迟：{rtt:.0f} ms" if rtt >= 0 else "延迟：—"
+            self.lbl_connection.setText(f"连接：已连 Jetson  |  {rtt_txt}")
             self.lbl_connection.setStyleSheet("color: #2e7d32;")
         else:
             self.lbl_connection.setText("连接：未连接（等待重连）")
             self.lbl_connection.setStyleSheet("color: #c62828;")
+        if cs["status_text"]:
+            self.lbl_state.setText(f"小车状态：{cs['status_text']}")
 
     # ----- UI 事件 -----
 
@@ -301,17 +307,41 @@ class MainWindow(QMainWindow):
     def _on_status_event(self, kind: str, payload: str) -> None:
         kind = kind.upper()
         if kind == "STATUS":
-            self.lbl_state.setText(f"小车状态：{payload}")
+            # Jetson 推回的格式: "state=... mode=... fps=... ros=... clients=..."
+            # 解析成简短的本地化展示
+            short = self._shorten_status(payload)
+            self.lbl_state.setText(f"小车状态：{short}")
         elif kind == "INFO":
             self.statusBar().showMessage(f"Jetson: {payload}", 3000)
         elif kind == "ACK":
             self.statusBar().showMessage(f"ACK: {payload}", 1500)
+        elif kind == "PONG":
+            # 静默；RTT 在 _update_stats 里通过 sender.stats() 读
+            pass
         elif kind == "CONNECTED":
             self.statusBar().showMessage(f"已连 Jetson: {payload}", 2000)
         elif kind == "DISCONNECTED":
             self.lbl_state.setText("小车状态：未连接")
         else:
             self.statusBar().showMessage(f"{kind}: {payload}", 2000)
+
+    @staticmethod
+    def _shorten_status(payload: str) -> str:
+        """把 "state=IDLE mode=blue_path fps=28.5 ros=mock clients=1" 变成 "IDLE 模式 blue_path  28.5 FPS  ROS=mock"."""
+        out: list[str] = []
+        for part in payload.split():
+            if "=" not in part:
+                continue
+            k, _, v = part.partition("=")
+            if k == "state":
+                out.append(f"{v}")
+            elif k == "mode":
+                out.append(f"模式 {v}")
+            elif k == "fps":
+                out.append(f"{v} FPS")
+            elif k == "ros":
+                out.append(f"ROS={v}")
+        return "  |  ".join(out) if out else payload
 
     # ----- 关闭事件 -----
 
