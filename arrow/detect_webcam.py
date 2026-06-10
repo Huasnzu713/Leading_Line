@@ -1,11 +1,14 @@
 """命令行: 打开摄像头实时识别箭头方向.
 
+本文件位于 arrow/ 子目录, 应在 arrow/ 内运行.
+
 用法:
+    cd arrow
     python detect_webcam.py                  # 默认 0 号摄像头
     python detect_webcam.py --camera 1       # 选 1 号摄像头
     python detect_webcam.py --min-conf 0.3   # 最小置信度阈值
 
-按 q 退出, 按 s 保存当前帧到 frame_*.png.
+按 q 退出, 按 s 保存当前帧到 frame_*.png (CWD, 即 arrow/).
 """
 from __future__ import annotations
 

@@ -1,9 +1,14 @@
 """生成示例箭头图片用于测试和演示.
 
-用法:
-    python generate_samples.py [--out tests/arrow] [--size 300]
+本文件位于 arrow/ 子目录, 应在 arrow/ 内运行, 默认输出到 ../tests/arrow/.
 
-会在 out 目录下生成 12 张图: 9 张黑箭头 (4 方向 × {干净, 噪声, 旋转}) + 3 张彩色反例.
+用法:
+    cd arrow
+    python generate_samples.py                            # 默认写到 ../tests/arrow/
+    python generate_samples.py --out ../tests/arrow       # 同上, 显式指定
+    python generate_samples.py --size 300                 # 自定义图片边长
+
+会生成 12 张图: 9 张黑箭头 (4 方向 × {干净, 噪声, 旋转}) + 3 张彩色反例.
 """
 from __future__ import annotations
 
@@ -86,7 +91,7 @@ def make_colored_arrow(direction: str, size: int = 300,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="生成示例箭头图片")
-    parser.add_argument("--out", default="samples", help="输出目录")
+    parser.add_argument("--out", default="../tests/arrow", help="输出目录 (相对 CWD; 默认 ../tests/arrow 需从 arrow/ 子目录运行)")
     parser.add_argument("--size", type=int, default=300, help="图片边长 (像素)")
     parser.add_argument("--seed", type=int, default=42, help="噪声随机种子")
     args = parser.parse_args()

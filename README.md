@@ -54,10 +54,11 @@ HSV 颜色分割 (cv2.inRange) ──► 道路掩码 + 地面掩码
 | `path_planner.py` | 道路边缘采样 + 中点提取 + 异常值剔除 + 平滑拟合 + 跨帧 EMA |
 | `controller.py` | 由路径输出 `(steer_deg, speed)` + 曲率感知降速 |
 | `visualizer.py` | 道路外轮廓 + 中心引导线 + 前瞻点 + HUD |
-| `arrow_detector.py` | 箭头方向识别核心算法（`detect_arrow` / `annotate`，见 §9） |
-| `detect_image.py` | 箭头方向识别图片 CLI（见 §9） |
-| `detect_webcam.py` | 箭头方向识别摄像头 CLI（见 §9） |
-| `generate_samples.py` | 重新生成 12 张箭头测试样本到 `tests/arrow/`（见 §9） |
+| `arrow/` | 箭头方向识别模块（`arrow_detector.py` 核心 + 3 个 CLI，见 §9） |
+| `arrow/arrow_detector.py` | 核心算法：`detect_arrow` / `annotate`（见 §9） |
+| `arrow/detect_image.py` | 图片 CLI（见 §9） |
+| `arrow/detect_webcam.py` | 摄像头 CLI（见 §9） |
+| `arrow/generate_samples.py` | 重新生成 12 张测试样本到 `tests/arrow/`（见 §9） |
 | `config.yaml` | 全部可调参数集中地 |
 | `requirements.txt` | Python 依赖清单 |
 | `tests/` | 9 个回归测试 + 算法样本图（5 张 PNG） |
@@ -93,14 +94,14 @@ python qr_system/qr_main.py --mode test  --source tests/qr_state_machine_samples
 # camera 模式：实时
 python qr_system/qr_main.py --mode camera
 
-# 箭头方向识别：批量识别 samples 12 张
-python detect_image.py tests/arrow/*.png
+# 箭头方向识别：批量识别 tests/arrow/ 12 张
+cd arrow && python detect_image.py ../tests/arrow/*.png
 
 # 箭头方向识别：把标注后的图存到 out/
-python detect_image.py tests/arrow/*.png --save-dir out
+cd arrow && python detect_image.py ../tests/arrow/*.png --save-dir out
 
 # 箭头方向识别：摄像头实时（按 q 退出，按 s 保存当前帧）
-python detect_webcam.py
+cd arrow && python detect_webcam.py
 ```
 
 可视化窗口中按 **ESC** 退出，按 **s** 保存当前帧到 `test_result/`，按 **d** 切换调试模式。
@@ -170,32 +171,32 @@ python tests/make_synth.py     # 重新生成合成图 tests/synth.png
 
 详见 [qr_system/README.md](qr_system/README.md)。
 
-## 9. 箭头方向识别
+## 9. 箭头方向识别（`arrow/`）
 
 轻量、零训练数据的箭头方向识别小工具，基于 OpenCV 几何方法（Otsu 二值化 + **黑色校验** + 凸包多边形近似 + 内角打分）。  
 **只检测黑色箭头**：找到候选轮廓后会用轮廓内灰度均值再做一次硬过滤（默认 ≤ 80），红/绿/蓝/浅灰等其他颜色直接返回 `None`。能识别 **前 / 左 / 右** 三向，给出像素级尖端坐标和 0~1 置信度。
 
-代码 4 个文件直接放在项目根目录：
+代码 4 个文件统一放在 `arrow/` 子目录里，运行时要 `cd arrow`：
 
 | 文件 | 作用 |
 |---|---|
-| [arrow_detector.py](arrow_detector.py) | 核心算法：`detect_arrow(img) -> ArrowResult` 和 `annotate(img, result)` |
-| [detect_image.py](detect_image.py) | 图片 CLI，支持通配符、批量保存标注图 |
-| [detect_webcam.py](detect_webcam.py) | 摄像头实时识别，叠加方向标签和 FPS |
-| [generate_samples.py](generate_samples.py) | 重新生成 12 张示例箭头图（9 黑 + 3 彩色反例）到 `tests/arrow/` |
+| [arrow/arrow_detector.py](arrow/arrow_detector.py) | 核心算法：`detect_arrow(img) -> ArrowResult` 和 `annotate(img, result)` |
+| [arrow/detect_image.py](arrow/detect_image.py) | 图片 CLI，支持通配符、批量保存标注图 |
+| [arrow/detect_webcam.py](arrow/detect_webcam.py) | 摄像头实时识别，叠加方向标签和 FPS |
+| [arrow/generate_samples.py](arrow/generate_samples.py) | 重新生成 12 张示例箭头图（9 黑 + 3 彩色反例）到 `tests/arrow/` |
 
 ```bash
 # 1. 重新生成样本到 tests/arrow/（已带 12 张，可跳过）
-python generate_samples.py --out tests/arrow
+cd arrow && python generate_samples.py            # 默认写到 ../tests/arrow/
 
 # 2. 对 tests/arrow/ 下所有图做识别并打印
-python detect_image.py tests/arrow/*.png
+cd arrow && python detect_image.py ../tests/arrow/*.png
 
 # 3. 把标注后的图存到 out/
-python detect_image.py tests/arrow/*.png --save-dir out
+cd arrow && python detect_image.py ../tests/arrow/*.png --save-dir out
 
-# 4. 摄像头实时识别（按 q 退出，按 s 保存当前帧）
-python detect_webcam.py
+# 4. 摄像头实时识别（按 q 退出，按 s 保存当前帧到 CWD）
+cd arrow && python detect_webcam.py
 ```
 
 示例输出（12 张里 9 张黑色通过、3 张彩色被拒）：
@@ -296,11 +297,11 @@ if result is not None:
 
 ### 与引导线算法对接
 
-`arrow_detector.detect_arrow(frame, min_darkness=80)` 接受与 `main.py` 同一份摄像头帧 BGR，输出 `(direction, angle_deg, confidence, ...)`；不黑则返回 `None`。  
+`arrow.arrow_detector.detect_arrow(frame, min_darkness=80)` 接受与 `main.py` 同一份摄像头帧 BGR，输出 `(direction, angle_deg, confidence, ...)`；不黑则返回 `None`。  
 典型做法是在 `process_frame` 之前/之后加一段：
 
 ```python
-from arrow_detector import detect_arrow
+from arrow.arrow_detector import detect_arrow
 arrow = detect_arrow(frame)
 if arrow is not None and arrow.confidence >= 0.5:
     # 用 arrow.direction / angle_deg 覆盖 controller 的输出
