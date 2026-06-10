@@ -6,7 +6,6 @@ __pycache__/
 # 测试 / 运行输出（每次跑都会重新生成，不该入版本）
 qr_result/
 test_result/
-arrow_recongnize/out/
 .pytest_cache/
 
 # 编辑器 / 系统
