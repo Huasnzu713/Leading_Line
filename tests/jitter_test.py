@@ -12,7 +12,8 @@ import cv2
 
 sys.path.insert(0, ".")
 from main import load_config, process_frame
-import path_planner
+from protocol import select_mode as _select_mode
+from jetson.algo import path_planner
 
 
 def path_mid_std(paths):
@@ -24,7 +25,9 @@ def path_mid_std(paths):
 
 
 def main():
-    cfg = load_config("config.yaml")
+    cfg = load_config("jetson/config.yaml")
+    _cfg_raw = cfg
+    cfg, _ = _select_mode(_cfg_raw, "blue_path")
     img = cv2.imread("tests/test_image.png")
     assert img is not None, "missing tests/test_image.png"
 

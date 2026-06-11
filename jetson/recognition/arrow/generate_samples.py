@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -90,8 +91,10 @@ def make_colored_arrow(direction: str, size: int = 300,
 
 
 def main() -> None:
+    # 默认输出到本文件所在目录的 tests/ 子目录
+    default_out = str(Path(__file__).resolve().parent / "tests")
     parser = argparse.ArgumentParser(description="生成示例箭头图片")
-    parser.add_argument("--out", default="../tests/arrow", help="输出目录 (相对 CWD; 默认 ../tests/arrow 需从 arrow/ 子目录运行)")
+    parser.add_argument("--out", default=default_out, help=f"输出目录（默认 {default_out}）")
     parser.add_argument("--size", type=int, default=300, help="图片边长 (像素)")
     parser.add_argument("--seed", type=int, default=42, help="噪声随机种子")
     args = parser.parse_args()

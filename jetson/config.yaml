@@ -1,8 +1,9 @@
-# Jetson 端配置示例
-# 与 config.yaml 不同的部分：
-# - network 段：PC 的 IP / 端口
-# - ros 段：ROS bridge 的 backend（mock / ros）
-# - jetson_runtime 段：JPEG 质量、推流帧率上限
+# Jetson 端完整配置
+# 算法段（camera / colors / roi / morphology / path / controller / temporal / modes）
+# 与 config.yaml 共享；额外包含 network / ros / jetson_runtime / overrides 段。
+# 由 `python -m jetson.main_jetson --config jetson/config.yaml` 读入。
+#
+# 想改算法参数？直接编辑本文件即可；想加模式，复制 modes 段并填 colors/visualization。
 
 # --- 网络（jetson 需要知道 PC 在哪）---
 network:
@@ -105,6 +106,12 @@ ros:
 jetson_runtime:
   jpeg_quality: 70              # 0-100；高 = 清晰 + 大包
   fps_cap: 30.0                 # 推流帧率上限，避免占满网卡
+
+# --- main.py 单机调试用（cv2 窗口相关）---
+runtime:
+  print_to_stdout: true         # 把 steer/speed 持续打到 stdout
+  window_name: "Leading Line"   # cv2.imshow 窗口名
+  exit_key: 27                  # ESC 退出（ASCII 27）
 
 # --- 覆盖层（路径算法之上的箭头 + QR 识别）---
 # 全部可关；关掉后对应模块静默 no-op，不影响 path 输出

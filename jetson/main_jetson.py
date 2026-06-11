@@ -1,15 +1,15 @@
 """Jetson 端入口。
 
 启动后会做：
-1. 读 config.yaml（同一份，双端共享）
+1. 读 jetson/config.yaml（算法 + network + ros + overrides 全在里头）
 2. 打开 UDP 视频发送（→ PC 的 IP:VIDEO_PORT）
 3. 打开 TCP 命令接收（监听 0.0.0.0:CMD_PORT）
 4. 起 RosBridge（默认 mock，可改 ros）
-5. Pipeline.run() 阻塞跑摄像头 + 算法 + 推流 + 响应命令
+5. Pipeline.run() 阻塞跑摄像头 + 算法 + override + 推流 + 响应命令
 
 运行::
 
-    python -m jetson.main_jetson --config config_jetson.yaml
+    python -m jetson.main_jetson --config jetson/config.yaml
 """
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ def build_pipeline(cfg: dict) -> Pipeline:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Jetson 端：摄像头 + 算法 + UDP 推流 + TCP 命令")
-    p.add_argument("--config", default="config_jetson.yaml", help="YAML 配置路径")
+    p.add_argument("--config", default="jetson/config.yaml", help="YAML 配置路径")
     p.add_argument("--log-level", default="INFO", help="DEBUG / INFO / WARNING / ERROR")
     return p.parse_args()
 

@@ -40,7 +40,7 @@ def mock_frame(w=320, h=240) -> bytes:
 
 
 def main() -> int:
-    cfg = yaml.safe_load(open("config_jetson.yaml", encoding="utf-8"))
+    cfg = yaml.safe_load(open("jetson/config.yaml", encoding="utf-8"))
 
     # === Jetson 端：TCP server + UDP sender ===
     rx = CommandReceiver(host="0.0.0.0", port=CMD_PORT)

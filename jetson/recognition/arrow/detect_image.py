@@ -17,7 +17,10 @@ import sys
 
 import cv2
 
-from arrow_detector import detect_arrow, annotate
+try:
+    from .arrow_detector import detect_arrow, annotate
+except ImportError:  # 脚本直跑模式
+    from arrow_detector import detect_arrow, annotate
 
 # Windows 控制台默认 GBK, 强制 UTF-8 让中文方向名正常显示
 if sys.platform == "win32":

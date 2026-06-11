@@ -5,9 +5,11 @@ import cv2
 
 sys.path.insert(0, ".")
 from main import load_config, process_frame
+from protocol import select_mode as _select_mode
 
 
-cfg = load_config("config.yaml")
+cfg = load_config("jetson/config.yaml")
+_cfg_raw = cfg; cfg, _ = _select_mode(_cfg_raw, "blue_path")
 H, W = 480, 640
 img = np.full((H, W, 3), 60, dtype=np.uint8)
 # 路面：左侧 1/4 起到右边界，宽 3/4 W

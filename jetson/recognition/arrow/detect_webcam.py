@@ -18,7 +18,10 @@ import time
 
 import cv2
 
-from arrow_detector import detect_arrow, annotate
+try:
+    from .arrow_detector import detect_arrow, annotate
+except ImportError:  # 脚本直跑模式
+    from arrow_detector import detect_arrow, annotate
 
 if sys.platform == "win32":
     try:

@@ -6,8 +6,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest
 
-from qr_policy import Policy
-from qr_state_machine import QRStateMachine, State
+try:
+    from ..qr_policy import Policy
+    from ..qr_state_machine import QRStateMachine, State
+except ImportError:  # 脚本直跑模式
+    from qr_policy import Policy
+    from qr_state_machine import QRStateMachine, State
 
 
 def _fresh(timeout=30.0):

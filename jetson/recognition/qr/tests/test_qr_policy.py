@@ -5,7 +5,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest
 
-from qr_policy import Policy, PolicyParseError, parse_policy, policy_to_text, KNOWN_POLICIES
+try:
+    from ..qr_policy import Policy, PolicyParseError, parse_policy, policy_to_text, KNOWN_POLICIES
+except ImportError:  # 脚本直跑模式
+    from qr_policy import Policy, PolicyParseError, parse_policy, policy_to_text, KNOWN_POLICIES
 
 
 # ---------- JSON 格式 ----------

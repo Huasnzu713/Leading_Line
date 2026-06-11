@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 
 sys.path.insert(0, ".")
-import path_planner
+from jetson.algo import path_planner
 
 cfg = {
     "roi": {"top_ratio": 0.0, "bottom_ratio": 1.0, "left_ratio": 0.0, "right_ratio": 1.0},

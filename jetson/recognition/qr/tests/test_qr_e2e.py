@@ -1,22 +1,27 @@
 """端到端：生成 QR → 解码 → 状态机 → 校验输出。
 
-依赖 qr_make_test.py 先生成 tests/qr_state_machine_samples/turn_left.png 等样本；
+依赖 qr_make_test.py 先生成 ../qr_state_machine_samples/turn_left.png 等样本；
 如果文件不存在，会自己调一次生成（这样跑测试不需要先手动生成）。
 """
 import sys
 import subprocess
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+# 本文件在 jetson/recognition/qr/tests/，样本目录在同级的 qr_state_machine_samples/
+QR_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(QR_DIR))  # 找 qr_decoder / qr_state_machine
 
 import cv2
 
-from qr_decoder import decode_qr_codes
-from qr_state_machine import QRStateMachine
+try:
+    from ..qr_decoder import decode_qr_codes
+    from ..qr_state_machine import QRStateMachine
+except ImportError:  # 脚本直跑模式
+    from qr_decoder import decode_qr_codes
+    from qr_state_machine import QRStateMachine
 
 
-SAMPLES_DIR = ROOT.parent / "tests" / "qr_state_machine_samples"
+SAMPLES_DIR = QR_DIR / "qr_state_machine_samples"
 
 
 def _ensure_samples():
@@ -25,7 +30,8 @@ def _ensure_samples():
     if not all((SAMPLES_DIR / n).exists() for n in need):
         print("[setup] 生成 QR 样本到", SAMPLES_DIR)
         subprocess.run(
-            [sys.executable, str(ROOT / "qr_make_test.py"), "--out", str(SAMPLES_DIR)],
+            [sys.executable, str(QR_DIR / "qr_make_test.py"),
+             "--out", str(SAMPLES_DIR)],
             check=True,
         )
 

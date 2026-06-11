@@ -20,11 +20,8 @@ from typing import Optional
 import cv2
 import numpy as np
 
-import color_segmenter
-import controller
-import path_planner
-import visualizer
-from arrow.arrow_detector import annotate as arrow_annotate
+from jetson.algo import color_segmenter, controller, path_planner, visualizer
+from jetson.recognition.arrow.arrow_detector import annotate as arrow_annotate
 from protocol import (
     STATE_ERROR,
     STATE_IDLE,
@@ -32,7 +29,7 @@ from protocol import (
     STATE_STOPPED,
     select_mode,
 )
-from qr_system.qr_decoder import draw_qr_overlay
+from jetson.recognition.qr.qr_decoder import draw_qr_overlay
 
 from .overrides import (
     FrameOverrides,
@@ -206,7 +203,7 @@ class Pipeline:
         )
         # 时域平滑
         if self._smoother is None:
-            from path_planner import PathSmoother
+            from jetson.algo.path_planner import PathSmoother
             self._smoother = PathSmoother(alpha=float(cfg.get("temporal", {}).get("alpha", 0.4)))
         path = edges["center"]
         if cfg.get("temporal", {}).get("reset_on_no_road", True) and (

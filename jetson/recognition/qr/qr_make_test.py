@@ -54,8 +54,8 @@ def make_qr_image(text: str, size: int = 480) -> np.ndarray:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--out", default="tests/qr_state_machine_samples",
-                   help="输出目录（默认 tests/qr_state_machine_samples/）")
+    p.add_argument("--out", default="jetson/recognition/qr/tests/qr_state_machine_samples",
+                   help="输出目录（默认 jetson/recognition/qr/tests/qr_state_machine_samples/）")
     args = p.parse_args()
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)

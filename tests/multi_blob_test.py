@@ -8,8 +8,8 @@ import numpy as np
 import cv2
 
 sys.path.insert(0, ".")
-import color_segmenter
-import path_planner
+from jetson.algo import color_segmenter
+from jetson.algo import path_planner
 
 
 cfg = {

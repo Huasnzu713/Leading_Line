@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 sys.path.insert(0, ".")
-import path_planner
+from jetson.algo import path_planner
 
 
 def case(name, road_mask, cfg, expect_nonempty=True, allow_nan=False):

@@ -37,9 +37,9 @@ from typing import Optional
 import cv2
 import numpy as np
 
-from arrow.arrow_detector import ArrowResult, detect_arrow
-from qr_system.qr_decoder import DecodedQR, decode_qr_codes
-from qr_system.qr_state_machine import QRStateMachine, State as QRState
+from jetson.recognition.arrow.arrow_detector import ArrowResult, detect_arrow
+from jetson.recognition.qr.qr_decoder import DecodedQR, decode_qr_codes
+from jetson.recognition.qr.qr_state_machine import QRStateMachine, State as QRState
 
 log = logging.getLogger(__name__)
 

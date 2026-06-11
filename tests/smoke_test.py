@@ -5,10 +5,12 @@ import cv2
 
 sys.path.insert(0, ".")
 from main import load_config, process_frame
-import visualizer
+from protocol import select_mode as _select_mode
+from jetson.algo import visualizer
 
 
-cfg = load_config("config.yaml")
+cfg = load_config("jetson/config.yaml")
+_cfg_raw = cfg; cfg, _ = _select_mode(_cfg_raw, "blue_path")
 img = cv2.imread("tests/synth.png")
 assert img is not None, "missing tests/synth.png"
 

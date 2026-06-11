@@ -1,9 +1,12 @@
-"""Leading-Line 算法入口。
+"""Leading-Line 算法单机调试入口（双端模式下用 `python -m jetson.main_jetson`）。
+
+读 jetson/config.yaml 的算法段（colors / roi / morphology / path / controller / temporal / visualization），
+跑主循环后用 cv2.imshow 显示。
 
 用法：
-    python main.py                        # 默认读 config.yaml
-    python main.py --config my.yaml       # 指定其它配置
-    python main.py --source tests/synth.png   # 离线跑一张图
+    python main.py                                    # 默认读 jetson/config.yaml
+    python main.py --config my.yaml                   # 指定其它配置
+    python main.py --source tests/synth.png           # 离线跑一张图
 
 按 ESC 退出可视化窗口。
 """
@@ -17,10 +20,8 @@ import cv2
 import numpy as np
 import yaml
 
-import color_segmenter
-import controller
-import path_planner
-import visualizer
+from jetson.algo import color_segmenter, controller, path_planner, visualizer
+from protocol import select_mode
 
 
 def load_config(path: str) -> dict:
@@ -199,7 +200,7 @@ def run(cfg: dict, source: str | None, debug: bool = False) -> None:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="谷仓场景引导线算法")
-    p.add_argument("--config", default="config.yaml", help="YAML 配置路径")
+    p.add_argument("--config", default="jetson/config.yaml", help="YAML 配置路径")
     p.add_argument(
         "--source",
         default=None,
@@ -215,7 +216,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    cfg = load_config(args.config)
+    raw_cfg = load_config(args.config)
+    # 单机调试：默认用 blue_path 模式（把 colors/visualization 合并到顶层）
+    cfg, _meta = select_mode(raw_cfg, "blue_path")
     run(cfg, args.source, debug=args.debug)
     return 0
 
