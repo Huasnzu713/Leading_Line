@@ -25,6 +25,7 @@ catkin_package(
 # 所有 Python 节点装到 ${CATKIN_PACKAGE_BIN_DESTINATION}
 catkin_install_python(PROGRAMS
   scripts/leading_line_node.py
+  scripts/run_jetson_pipeline.py
   scripts/xcar/xcar_ros.py
   scripts/xcar/xcar_data.py
   scripts/xcar/mbot_teleop.py
