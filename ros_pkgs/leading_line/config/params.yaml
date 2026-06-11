@@ -6,21 +6,25 @@
 config_path: "jetson/config.yaml"
 
 # --- ROS 话题 ---
-# 输入：摄像头图像
-image_topic: "/usb_cam/image_raw"
-# 输出：阿克曼 /cmd_vel
+# 输入：摄像头图像（xcar 默认 realsense；Wheeltec 阿克曼用 /usb_cam/image_raw）
+image_topic: "/camera/color/image_raw"
+# 输出：3-DOF /cmd_vel（xcar 全向；阿克曼底盘也兼容，只读 linear.x + angular.z）
 cmd_vel_topic: "/cmd_vel"
 
-# --- 阿克曼运动学参数 ---
-wheelbase_m: 0.30   # 阿克曼轴距；用于 steer → angular.z 转换
-max_speed: 0.30     # 最大线速度（m/s）保险
-min_speed: 0.05     # 最小线速度；控制量 < 此值时不发
-publish_hz: 30.0    # /cmd_vel 发布频率上限（与摄像头帧率匹配）
+# --- 阿克曼等效运动学 ---
+# 在全向 4WD 底盘上开"阿克曼风格"：linear.y=0，w = v·tan(steer)/L
+wheelbase_m: 0.30
+max_speed: 0.30
+min_speed: 0.05
+publish_hz: 30.0
 
 # --- 模式 ---
-# 默认引导线模式：blue_path / green_path / test
 default_mode: "blue_path"
 
 # --- 安全 ---
-# 多久没收到新图像就停车（秒）
+# 摄像头断流多久停车（秒）
 image_timeout_s: 1.0
+# 任一 /xcar/sonarN 距离小于此值就紧急停车（米）；<0 禁用
+sonar_stop_m: 0.30
+# 紧急停车用的超声话题列表（JSON 字符串，避免 YAML 列表转 ROS param 麻烦）
+sonar_topics: '["/xcar/sonar1","/xcar/sonar2","/xcar/sonar3","/xcar/sonar4"]'

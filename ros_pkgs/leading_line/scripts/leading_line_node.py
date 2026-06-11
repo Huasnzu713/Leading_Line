@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
-"""leading_line ROS 节点（ROS 1 Noetic，阿克曼底盘）。
+"""leading_line ROS 节点（ROS 1 / zonesion xcar 全向底盘）。
 
 订阅摄像头话题 → 跑算法（路径规划 + 箭头 + QR 识别）→ 算 (steer, speed)
-→ 转 (linear.x, angular.z) → 发布到 /cmd_vel。
+→ 通过 RosBridge 转 (linear.x, linear.y, angular.z) → 发布到 /cmd_vel。
+
+底盘适配：zonesion xcar（src/mbot/scripts/xcar_ros.py）3-DOF 全向底盘。
+  - /cmd_vel 是 geometry_msgs/Twist
+  - linear.x：前进速度；linear.y：横向（4WD 全向才有意义，我们默认 0）
+  - angular.z：偏航角速度
+  - steer → angular.z 用阿克曼近似 w = v · tan(steer) / wheelbase
+    （"在 4WD 上开阿克曼车"风格，前后方向为主）
 
 依赖：
   - jetson.algo.color_segmenter / path_planner / controller / visualizer
   - jetson.overrides.FrameOverrides
+  - jetson.ros_bridge.RosBridge  （运动学换算 + sonar/bat 安全）
   - protocol.mode_resolver.select_mode
 
 参数（见 config/params.yaml）:
   ~config_path     算法 YAML 路径
-  ~image_topic     输入摄像头话题（默认 /usb_cam/image_raw）
+  ~image_topic     输入摄像头话题（默认 /usb_cam/image_raw，xcar 用 /camera/color/image_raw）
   ~cmd_vel_topic   输出话题（默认 /cmd_vel）
   ~wheelbase_m     阿克曼轴距（米）
   ~max_speed       限速
@@ -19,11 +27,14 @@
   ~publish_hz      /cmd_vel 上限频率
   ~default_mode    启动模式（blue_path / green_path / test）
   ~image_timeout_s 多久没新图像就自动停车
+  ~sonar_stop_m    任一 /xcar/sonarN 距离小于此值就强制 0（米；<0 禁用）
+  ~sonar_topics    紧急停车用的超声话题列表（JSON 字符串）
 
 安全：
   - RUNNING 中才发 /cmd_vel；STOP/IDLE 时发 0
   - 摄像头断流超过 image_timeout_s 自动发 0
-  - 收到 SIGINT/SIGTERM 时最后发一次 0
+  - RosBridge 内置 sonar < sonar_stop_m 紧急停车 + bat < bat_critical 自动停
+  - 节点关闭（Ctrl+C / SIGTERM）最后发一次 0
 """
 from __future__ import annotations
 
@@ -34,30 +45,29 @@ _ROOT = Path(__file__).resolve().parents[3]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-import math
-import signal
+import json
 import threading
 import time
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import rospy
 import yaml
 from cv_bridge import CvBridge
-from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
 
 from jetson.algo import color_segmenter, controller, path_planner
 from jetson.overrides import FrameOverrides
+from jetson.ros_bridge import RosBridge
 from protocol import select_mode
 
 
 class LeadingLineNode:
-    """ROS 节点：图像 → 算法 → /cmd_vel。"""
+    """ROS 节点：图像 → 算法 → RosBridge → /cmd_vel。"""
 
     def __init__(self) -> None:
         rospy.init_node("leading_line", log_level=rospy.INFO)
-        self.log = rospy.get_logger().getChild("leading_line")
+        self.log = rospy.get_logger().get_child("leading_line")
 
         # ---- 读参数 ----
         cfg_path = rospy.get_param("~config_path", "jetson/config.yaml")
@@ -69,6 +79,18 @@ class LeadingLineNode:
         self.publish_hz = float(rospy.get_param("~publish_hz", 30.0))
         default_mode = rospy.get_param("~default_mode", "blue_path")
         self.image_timeout_s = float(rospy.get_param("~image_timeout_s", 1.0))
+        sonar_stop_m = float(rospy.get_param("~sonar_stop_m", 0.30))
+        sonar_topics_raw = rospy.get_param(
+            "~sonar_topics",
+            '["/xcar/sonar1","/xcar/sonar2","/xcar/sonar3","/xcar/sonar4"]',
+        )
+        if isinstance(sonar_topics_raw, str):
+            try:
+                self.sonar_topics: List[str] = json.loads(sonar_topics_raw)
+            except Exception:  # noqa: BLE001
+                self.sonar_topics = [t.strip() for t in sonar_topics_raw.split(",") if t.strip()]
+        else:
+            self.sonar_topics = list(sonar_topics_raw)
 
         # ---- 加载算法配置 ----
         cfg_path_abs = str(Path(cfg_path).expanduser().resolve())
@@ -96,8 +118,28 @@ class LeadingLineNode:
         self._overrides = FrameOverrides(self.cfg)
         self._overrides.set_state_change_cb(self._on_qr_state_change)
 
-        # ---- ROS 通信 ----
-        self.cmd_pub = rospy.Publisher(self.cmd_vel_topic, Twist, queue_size=1)
+        # ---- RosBridge（运动学换算 + /cmd_vel Publisher + sonar/bat 安全闸）----
+        self.ros_bridge = RosBridge(
+            backend="ros",
+            wheelbase_m=self.wheelbase,
+            max_speed_mps=self.max_speed,
+            sonar_stop_m=sonar_stop_m,
+            cmd_vel_topic=self.cmd_vel_topic,
+        )
+        # 重新挂上我们这节点的 sonar 话题
+        self.ros_bridge.backend.sonar_topics = self.sonar_topics  # type: ignore[attr-defined]
+        # 如果是 RosBackend，订阅之（RosBridge 已尝试订阅过，这里补订一遍最新列表）
+        if hasattr(self.ros_bridge.backend, "_rospy") and self.ros_bridge.backend._rospy is not None:  # type: ignore[attr-defined]
+            from sensor_msgs.msg import Range  # type: ignore
+            for i, t in enumerate(self.sonar_topics):
+                try:
+                    self.ros_bridge.backend._rospy.Subscriber(  # type: ignore[attr-defined]
+                        t, Range, self.ros_bridge.backend._make_sonar_cb(i), queue_size=1  # type: ignore[attr-defined]
+                    )
+                except Exception as e:  # noqa: BLE001
+                    self.log.warn("sonar 订阅失败 %s: %s", t, e)
+
+        # ---- ROS 通信（图像订阅 + timer）----
         self.image_sub = rospy.Subscriber(
             self.image_topic, Image, self._on_image, queue_size=1
         )
@@ -107,11 +149,10 @@ class LeadingLineNode:
         period = 1.0 / max(self.publish_hz, 1.0)
         self._timer = rospy.Timer(rospy.Duration(period), self._tick)
 
-        # 启动期默认 IDLE；不跑算法
-        self.log.info("就绪：image_topic=%s  cmd_vel=%s  wheelbase=%.2fm",
-                      self.image_topic, self.cmd_vel_topic, self.wheelbase)
-        # 立刻给底盘一个 0 速度（避免 turn_on_wheeltec_robot 1s 超时停车产生的跳动）
-        self._publish_twist(0.0, 0.0)
+        self.log.info("就绪：image_topic=%s  cmd_vel=%s  wheelbase=%.2fm  sonar_stop=%.2fm",
+                      self.image_topic, self.cmd_vel_topic, self.wheelbase, sonar_stop_m)
+        # 启动期先发一次 0 速度（避免 xcar 1s 没 /cmd_vel 自动停的"跳动"）
+        self.ros_bridge.stop()
 
     # ---------------- ROS 回调 ----------------
 
@@ -131,29 +172,36 @@ class LeadingLineNode:
 
     def _on_shutdown(self) -> None:
         self.log.info("节点关闭，发最后一次 0 速度")
-        self._publish_twist(0.0, 0.0)
+        try:
+            self.ros_bridge.stop()
+        except Exception:  # noqa: BLE001
+            pass
 
     # ---------------- 主循环 ----------------
 
     def _tick(self, _evt) -> None:
-        """每秒最多 publish_hz 次；没新图像就发 0。"""
+        """每秒最多 publish_hz 次。"""
         with self._frame_lock:
             frame = self._last_frame
             t = self._last_frame_t
 
         # 摄像头断流超时
         if frame is None or (time.monotonic() - t) > self.image_timeout_s:
-            self._publish_twist(0.0, 0.0)
+            self.ros_bridge.stop()
             return
 
         # IDLE / STOPPED 时不发控制量
         if self._state != "RUNNING":
-            self._publish_twist(0.0, 0.0)
+            self.ros_bridge.stop()
             return
 
         steer, speed = self._process_one_frame(frame)
-        v, w = self._steer_to_cmd_vel(steer, speed)
-        self._publish_twist(v, w)
+        # 速度裁剪
+        speed = float(np.clip(speed, 0.0, 1.0))
+        if speed < self.min_speed / max(self.max_speed, 1e-3):
+            speed = 0.0
+        # RosBridge 负责：(steer, speed) → (vx, vy, w) + sonar/bat 安全 + /cmd_vel
+        self.ros_bridge.publish_cmd_vel(steer_deg=steer, speed=speed, lateral=0.0)
 
     # ---------------- 算法 ----------------
 
@@ -200,28 +248,7 @@ class LeadingLineNode:
         )
         return ov.steer_deg, ov.speed
 
-    # ---------------- 控制量转换 ----------------
-
-    def _steer_to_cmd_vel(self, steer_deg: float, speed: float) -> tuple[float, float]:
-        """(steer_deg, speed) → (linear.x, angular.z) for Ackermann."""
-        v = float(np.clip(speed, 0.0, self.max_speed))
-        if abs(v) < self.min_speed:
-            v = 0.0
-        steer_rad = math.radians(steer_deg)
-        # 阿克曼：w = v · tan(steer) / L
-        w = v * math.tan(steer_rad) / max(self.wheelbase, 1e-3)
-        return v, w
-
-    def _publish_twist(self, v: float, w: float) -> None:
-        msg = Twist()
-        msg.linear.x = float(v)
-        msg.angular.z = float(w)
-        try:
-            self.cmd_pub.publish(msg)
-        except Exception as e:  # noqa: BLE001
-            self.log.warn("publish 失败: %s", e)
-
-    # ---------------- 外部命令（service / topic 也可，这里用 service） ----------------
+    # ---------------- 外部命令 ----------------
 
     def set_state(self, state: str) -> None:
         assert state in ("IDLE", "RUNNING", "STOPPED")
@@ -230,7 +257,7 @@ class LeadingLineNode:
         self.log.info("状态切换: %s → %s", self._state, state)
         if state in ("IDLE", "STOPPED"):
             self._overrides.on_stop()
-            self._publish_twist(0.0, 0.0)
+            self.ros_bridge.stop()
         elif state == "RUNNING":
             self._overrides.on_start()
         self._state = state
@@ -239,7 +266,6 @@ class LeadingLineNode:
         """运行时切模式：从 raw_cfg 重新 select_mode，更新 colors/visualization。"""
         self.cfg, meta = select_mode(self._raw_cfg, mode_name)
         self._mode = meta.get("name") or mode_name
-        # override 层也要用新 cfg 重新初始化
         self._overrides = FrameOverrides(self.cfg)
         self._overrides.set_state_change_cb(self._on_qr_state_change)
         self.log.info("模式切换: %s (label=%s)", self._mode, meta.get("label"))
@@ -255,9 +281,7 @@ def main() -> int:
         rospy.logfatal("节点启动失败: %s", e)
         return 1
 
-    # 注册一个 SetBool 服务让外部（PC / 测试脚本）能切 RUNNING / STOPPED
-    from std_srvs.srv import SetBool, SetBoolResponse
-    from std_srvs.srv import SetBoolRequest
+    from std_srvs.srv import SetBool, SetBoolResponse, SetBoolRequest
 
     def _on_start_stop(req: SetBoolRequest):
         node.set_state("RUNNING" if req.data else "STOPPED")
@@ -265,7 +289,6 @@ def main() -> int:
 
     _ = rospy.Service("~start_stop", SetBool, _on_start_stop)
 
-    # 模式切换服务：req.data 是模式名（blue_path / green_path / test）
     def _on_set_mode(req: SetBoolRequest):
         node.set_mode(req.data)
         return SetBoolResponse(success=True, message=node._mode)

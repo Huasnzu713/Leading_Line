@@ -22,8 +22,11 @@
   <depend>cv_bridge</depend>
 
   <!-- 同工作空间内的依赖（launch include 用） -->
-  <run_depend>turn_on_wheeltec_robot</run_depend>
-  <run_depend>wheeltec_robot_rc</run_depend>
+  <run_depend>mbot</run_depend>     <!-- zonesion xcar 底盘 + 摄像头 launch -->
+  <run_depend>realsense2_camera</run_depend>   <!-- RealSense 驱动（use_realsense=true 时） -->
+  <run_depend>usb_cam</run_depend>  <!-- USB 摄像头（use_realsense=false 时） -->
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
 
   <export>
   </export>
