@@ -1,17 +1,24 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>leading_line</name>
-  <version>0.1.0</version>
-  <description>
-    引导线自动驾驶算法在 Wheeltec 阿克曼小车上的 ROS launch 包。
-    把 jetson/ 下的算法（路径规划 + 箭头 + QR 识别）作为 ROS 节点跑，
-    订阅摄像头话题、发布 /cmd_vel 给 turn_on_wheeltec_robot 底盘。
-  </description>
+  <version>0.2.0</version>
+  <description><![CDATA[
+引导线自动驾驶算法的 ROS launch 包（ROS 1 catkin）。
+
+自带：
+  - leading_line_node.py：图像 → 算法 → /cmd_vel
+  - scripts/xcar/{xcar_ros,xcar_data,mbot_teleop}.py：
+    从原 mbot 包移植过来的 xcar 串口桥接（/cmd_vel ↔ /dev/ttyXCar）
+    和键盘遥控
+
+需要 apt 安装：
+  - ros-<distro>-realsense2-camera （realsense 摄像头 ROS 驱动）
+  - python3-serial 或 pip install pyserial （xcar 串口）
+]]></description>
 
   <maintainer email="dev@leading-line.local">Leading Line Dev</maintainer>
   <license>MIT</license>
 
-  <!-- 必备依赖 -->
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>roscpp</depend>
@@ -19,14 +26,17 @@
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>     <!-- xcar_ros.py 发布 Odometry -->
+  <depend>tf</depend>          <!-- xcar_ros.py 用 TransformBroadcaster -->
   <depend>cv_bridge</depend>
 
-  <!-- 同工作空间内的依赖（launch include 用） -->
-  <run_depend>mbot</run_depend>     <!-- zonesion xcar 底盘 + 摄像头 launch -->
+  <!-- 同系统安装的 ROS 包（用 $(find ...) 引用）-->
   <run_depend>realsense2_camera</run_depend>   <!-- RealSense 驱动（use_realsense=true 时） -->
-  <run_depend>usb_cam</run_depend>  <!-- USB 摄像头（use_realsense=false 时） -->
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
+  <run_depend>tf2_ros</run_depend>
+  <run_depend>std_srvs</run_depend>
+
+  <!-- Python 依赖：pip install pyserial（或 apt python3-serial）-->
+  <!-- 不写在 package.xml 里；README 文档化 -->
 
   <export>
   </export>

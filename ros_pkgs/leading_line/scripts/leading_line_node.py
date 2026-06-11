@@ -4,7 +4,7 @@
 订阅摄像头话题 → 跑算法（路径规划 + 箭头 + QR 识别）→ 算 (steer, speed)
 → 通过 RosBridge 转 (linear.x, linear.y, angular.z) → 发布到 /cmd_vel。
 
-底盘适配：zonesion xcar（src/mbot/scripts/xcar_ros.py）3-DOF 全向底盘。
+底盘适配：zonesion xcar（[scripts/xcar/xcar_ros.py](xcar/xcar_ros.py)）3-DOF 全向底盘。
   - /cmd_vel 是 geometry_msgs/Twist
   - linear.x：前进速度；linear.y：横向（4WD 全向才有意义，我们默认 0）
   - angular.z：偏航角速度

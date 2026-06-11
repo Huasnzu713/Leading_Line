@@ -8,7 +8,7 @@
   * 低电量告警：bat < bat_warn (0.1V) 时打 log
 
 适配车型：
-- zonesion xcar（src/mbot/scripts/xcar_ros.py）：3-DOF 全向底盘，
+- zonesion xcar（ros_pkgs/leading_line/scripts/xcar/xcar_ros.py）：3-DOF 全向底盘，
   /cmd_vel 是 geometry_msgs/Twist，把 steer → angular.z、speed → linear.x
   lateral (linear.y) 默认 0（"在 4WD 上开阿克曼车"风格）。
 - 也兼容传统阿克曼底盘（只填 linear.x + angular.z）
