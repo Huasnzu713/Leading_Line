@@ -29,9 +29,9 @@ import logging
 from typing import Optional
 
 import numpy as np
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (
     QButtonGroup,
     QFrame,
     QGroupBox,
@@ -61,7 +61,7 @@ log = logging.getLogger("pc.ui")
 class ModeGroup(QGroupBox):
     """模式单选组：初始化时根据 cfg["modes"] 动态生成选项。"""
 
-    mode_selected = Signal(str)   # 选中新模式时发出模式名
+    mode_selected = pyqtSignal(str)   # 选中新模式时发出模式名
 
     def __init__(self, cfg: dict, parent: Optional[QWidget] = None) -> None:
         super().__init__("模式", parent)
@@ -158,8 +158,8 @@ class MainWindow(QMainWindow):
     """Qt 主窗口：左视频 / 右菜单 / 底部状态栏。"""
 
     # 跨线程信号（视频/命令线程 → UI 线程）
-    status_signal = Signal(str, str)   # kind, payload
-    frame_signal = Signal(object)      # ndarray
+    status_signal = pyqtSignal(str, str)   # kind, payload
+    frame_signal = pyqtSignal(object)      # ndarray
 
     def __init__(
         self,

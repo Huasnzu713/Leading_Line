@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from PySide6.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication
 
 from pc.comm.command_sender import CommandSender
 from pc.comm.video_receiver import VideoReceiver

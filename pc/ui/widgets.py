@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import numpy as np
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QImage, QPixmap
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QFont
 
 
 def bgr_to_qimage(frame_bgr: np.ndarray) -> QImage:
@@ -30,7 +30,6 @@ def make_placeholder_pixmap(w: int, h: int, text: str = "等待 Jetson 画面...
     """UI 启动但还没收到视频帧时显示的占位图。"""
     pm = QPixmap(w, h)
     pm.fill(Qt.darkGray)
-    from PySide6.QtGui import QPainter, QColor, QFont
     p = QPainter(pm)
     p.setPen(QColor(220, 220, 220))
     p.setFont(QFont("Microsoft YaHei", 14))

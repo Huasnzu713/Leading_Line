@@ -1,1 +1,1 @@
-"""PC UI 子包（PySide6）。"""
+"""PC UI 子包（PyQt5）。"""
