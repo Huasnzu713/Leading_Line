@@ -1,0 +1,82 @@
+<launch>
+  <!--
+    完整启动：阿克曼底盘（turn_on_wheeltec_robot）+ 摄像头（wheeltec_camera）
+            + leading_line 节点。
+
+    用法::
+      roslaunch leading_line leading_line_with_car.launch
+      roslaunch leading_line leading_line_with_car.launch car_mode:=mini_akm
+      roslaunch leading_line leading_line_with_car.launch camera_mode:=RgbCam
+  -->
+
+  <!-- 公共参数 -->
+  <arg name="car_mode"      default="mini_akm"
+       doc="阿克曼车系：mini_akm / senior_akm / top_akm_bs / top_akm_dl"/>
+  <arg name="camera_mode"   default="RgbCam"
+       doc="摄像头：RgbCam / Astra_S / Astra_Pro / Astra_Dabai / Astra_Gemini"/>
+  <arg name="if_usb_cam"    default="true"
+       doc="是否使用 USB 摄像头（仅 RgbCam 模式有效）"/>
+  <arg name="default_mode"  default="blue_path"
+       doc="引导线模式：blue_path / green_path / test"/>
+  <arg name="image_topic"   default="/usb_cam/image_raw"
+       doc="摄像头图像话题（要跟 wheeltec_camera.launch 输出一致）"/>
+  <arg name="wheelbase_m"   default="0.30"/>
+
+  <!-- 1) 底盘：turn_on_wheeltec_robot 仅起 base_serial.launch（不挂导航/slam）-->
+  <group if="$(eval car_mode == 'mini_akm' or car_mode == 'senior_akm' or car_mode == 'top_akm_bs' or car_mode == 'top_akm_dl')">
+    <include file="$(find turn_on_wheeltec_robot)/launch/include/base_serial.launch">
+      <arg name="odom_frame_id"  value="odom_combined"/>
+      <arg name="use_FDI_IMU_GNSS" value="false"/>
+    </include>
+  </group>
+
+  <!-- 其它车型不直接支持时退到默认 base_serial.launch（不报错）-->
+  <group unless="$(eval car_mode == 'mini_akm' or car_mode == 'senior_akm' or car_mode == 'top_akm_bs' or car_mode == 'top_akm_dl')">
+    <include file="$(find turn_on_wheeltec_robot)/launch/include/base_serial.launch">
+      <arg name="odom_frame_id"  value="odom_combined"/>
+      <arg name="use_FDI_IMU_GNSS" value="false"/>
+    </include>
+  </group>
+
+  <!-- 2) 摄像头：直接用 wheeltec_camera.launch 的 USB 分支 -->
+  <arg name="lidar_is_cx" value="false"/>
+  <arg name="if_voice"    value="false"/>
+  <arg name="navigation"  value="false"/>
+  <include file="$(find turn_on_wheeltec_robot)/launch/robot_model_visualization.launch">
+    <arg name="car_mode" value="$(arg car_mode)"/>
+    <arg name="if_voice" value="$(arg if_voice)"/>
+  </include>
+
+  <!-- 3) 摄像头：RgbCam 用 usb_cam；其它用 astra.launch 系列（按 camera_mode 选）-->
+  <group if="$(arg camera_mode == 'RgbCam')">
+    <param name="/use_usb_cam" value="yes" />
+    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+      <param name="video_device"   value="/dev/RgbCam"/>
+      <param name="image_width"    value="640"/>
+      <param name="image_height"   value="480"/>
+      <param name="pixel_format"   value="yuyv"/>
+      <param name="camera_frame_id" value="usb_cam"/>
+      <param name="io_method"      value="mmap"/>
+    </node>
+  </group>
+
+  <group if="$(arg camera_mode == 'Astra_S')">
+    <include file="$(find astra_camera)/launch/astra.launch"/>
+  </group>
+  <group if="$(arg camera_mode == 'Astra_Pro')">
+    <include file="$(find astra_camera)/launch/astrapro.launch"/>
+  </group>
+  <group if="$(arg camera_mode == 'Astra_Dabai')">
+    <include file="$(find astra_camera)/launch/dabai_u3.launch"/>
+  </group>
+  <group if="$(arg camera_mode == 'Astra_Gemini')">
+    <include file="$(find astra_camera)/launch/gemini.launch"/>
+  </group>
+
+  <!-- 4) leading_line 节点本体 -->
+  <include file="$(find leading_line)/launch/leading_line.launch">
+    <arg name="image_topic"   value="$(arg image_topic)"/>
+    <arg name="default_mode"  value="$(arg default_mode)"/>
+    <arg name="wheelbase_m"   value="$(arg wheelbase_m)"/>
+  </include>
+</launch>

@@ -1,0 +1,26 @@
+# leading_line ROS 节点参数
+# 启动时通过 <rosparam command="load" file="..." /> 加载到 /leading_line/ 私有命名空间
+
+# --- 算法配置 ---
+# 指向 jetson/config.yaml（绝对路径或相对 ROS_HOME 的相对路径）
+config_path: "jetson/config.yaml"
+
+# --- ROS 话题 ---
+# 输入：摄像头图像
+image_topic: "/usb_cam/image_raw"
+# 输出：阿克曼 /cmd_vel
+cmd_vel_topic: "/cmd_vel"
+
+# --- 阿克曼运动学参数 ---
+wheelbase_m: 0.30   # 阿克曼轴距；用于 steer → angular.z 转换
+max_speed: 0.30     # 最大线速度（m/s）保险
+min_speed: 0.05     # 最小线速度；控制量 < 此值时不发
+publish_hz: 30.0    # /cmd_vel 发布频率上限（与摄像头帧率匹配）
+
+# --- 模式 ---
+# 默认引导线模式：blue_path / green_path / test
+default_mode: "blue_path"
+
+# --- 安全 ---
+# 多久没收到新图像就停车（秒）
+image_timeout_s: 1.0

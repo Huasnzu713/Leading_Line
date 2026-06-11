@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>leading_line</name>
+  <version>0.1.0</version>
+  <description>
+    引导线自动驾驶算法在 Wheeltec 阿克曼小车上的 ROS launch 包。
+    把 jetson/ 下的算法（路径规划 + 箭头 + QR 识别）作为 ROS 节点跑，
+    订阅摄像头话题、发布 /cmd_vel 给 turn_on_wheeltec_robot 底盘。
+  </description>
+
+  <maintainer email="dev@leading-line.local">Leading Line Dev</maintainer>
+  <license>MIT</license>
+
+  <!-- 必备依赖 -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
+
+  <!-- 同工作空间内的依赖（launch include 用） -->
+  <run_depend>turn_on_wheeltec_robot</run_depend>
+  <run_depend>wheeltec_robot_rc</run_depend>
+
+  <export>
+  </export>
+</package>

@@ -1,0 +1,37 @@
+<launch>
+  <!--
+    全套启动：底盘 + 摄像头 + leading_line + 键盘遥控。
+
+    手动优先：键盘遥控（wheeltec_robot_rc 的 turtlebot_teleop_key.py）
+    和 leading_line 都发 /cmd_vel；通常情况下二者"哪个最近发了哪个赢"
+    （即"后写覆盖"）。如果想严格"遥控优先"请用 twist_mux，
+    这里默认不依赖额外包。
+
+    用法::
+      roslaunch leading_line leading_line_teleop.launch
+      # 启动后另开一个终端，键盘按 i/j/k/l/m/[,]/q 控制
+
+    紧急停车：在键盘终端按 'q' 或在 ROS 终端 Ctrl+C 都会让
+    wheeltec_robot 节点检测到 /cmd_vel 1s 内没有更新 → 主动停车。
+  -->
+
+  <arg name="car_mode"      default="mini_akm"/>
+  <arg name="camera_mode"   default="RgbCam"/>
+  <arg name="if_usb_cam"    default="true"/>
+  <arg name="default_mode"  default="blue_path"/>
+  <arg name="image_topic"   default="/usb_cam/image_raw"/>
+  <arg name="wheelbase_m"   default="0.30"/>
+
+  <!-- 底盘 + 摄像头 + leading_line -->
+  <include file="$(find leading_line)/launch/leading_line_with_car.launch">
+    <arg name="car_mode"     value="$(arg car_mode)"/>
+    <arg name="camera_mode"  value="$(arg camera_mode)"/>
+    <arg name="if_usb_cam"   value="$(arg if_usb_cam)"/>
+    <arg name="default_mode" value="$(arg default_mode)"/>
+    <arg name="image_topic"  value="$(arg image_topic)"/>
+    <arg name="wheelbase_m"  value="$(arg wheelbase_m)"/>
+  </include>
+
+  <!-- 键盘遥控：把 turtlebot_teleop_key 接到 /cmd_vel，与 leading_line 并存 -->
+  <include file="$(find wheeltec_robot_rc)/launch/keyboard_teleop.launch"/>
+</launch>
