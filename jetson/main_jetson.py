@@ -7,9 +7,10 @@
 4. 起 RosBridge（默认 mock，可改 ros）
 5. Pipeline.run() 阻塞跑摄像头 + 算法 + override + 推流 + 响应命令
 
-运行::
+两种运行方式都行：::
 
-    python -m jetson.main_jetson --config jetson/config.yaml
+    python -m jetson.main_jetson --config jetson/config.yaml      # 标准：包模式
+    python jetson/main_jetson.py --config jetson/config.yaml     # 直跑：会自动把项目根加进 sys.path
 """
 from __future__ import annotations
 
@@ -18,12 +19,18 @@ import logging
 import sys
 from pathlib import Path
 
+# 直跑模式兼容：`python jetson/main_jetson.py` 时相对 import 会失效，
+# 把项目根加进 sys.path 让绝对 import 也能工作。包模式跑时无副作用。
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 import yaml
 
-from .comm.command_receiver import CommandReceiver
-from .comm.video_sender import VideoSender
-from .pipeline import Pipeline
-from .ros_bridge import RosBridge
+from jetson.comm.command_receiver import CommandReceiver
+from jetson.comm.video_sender import VideoSender
+from jetson.pipeline import Pipeline
+from jetson.ros_bridge import RosBridge
 
 log = logging.getLogger("jetson.main")
 

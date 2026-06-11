@@ -7,9 +7,10 @@
 4. 打开 Qt 主窗口
 5. 窗口关闭 → 停通信线程 → 退出
 
-运行::
+两种运行方式都行：::
 
-    python -m pc.main_pc --config config_pc.yaml
+    python -m pc.main_pc --config config_pc.yaml      # 标准：包模式
+    python pc/main_pc.py --config config_pc.yaml      # 直跑：会自动把项目根加进 sys.path
 """
 from __future__ import annotations
 
@@ -17,6 +18,12 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+
+# 直跑模式兼容：`python pc/main_pc.py` 时 sys.path[0] 是 pc/，找不到 pc.* 包
+# 这里把项目根加进去；包模式跑（python -m pc.main_pc）时 ROOT 就是 CWD，已经在 path 上，加了也没副作用
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 import yaml
 from PyQt5.QtWidgets import QApplication
