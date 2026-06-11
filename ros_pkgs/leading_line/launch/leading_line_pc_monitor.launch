@@ -1,0 +1,69 @@
+<launch>
+  <!--
+    方式 A 一键启动：PC 监控 + 远程启停 + 小车自动巡线。
+
+    起 3 块：
+      1) xcar_ros    : 订 /cmd_vel → /dev/ttyXCar 串口（含 /odom、/xcar/sonar1..4）
+      2) 静态 TF     : base_link → sonar1 / sonar2 / laser1
+      3) jetson 流水线: 自己开摄像头 + UDP 视频 → PC + TCP 命令 ← PC
+                       + RosBridge publish /cmd_vel
+
+    跟 leading_line_with_car.launch 的区别：
+      - 不起 realsense2_camera，因为 jetson/main_jetson.py 自己用
+        cv2.VideoCapture(camera.index) 抓摄像头；同时起会争 /dev/video*。
+      - 不起 leading_line_node.py（订 ROS image），用 main_jetson.py（开 cv2 +
+        UDP 推流给 PC）替代。
+      - 暴露的 arg 是 jetson/config.yaml 的路径，不再是 ROS 参数集。
+
+    前置条件::
+      - jetson/config.yaml 里 ros.backend: "ros"（不是 "mock"）
+      - jetson/config.yaml 里 network.pc_ip 指向你的 PC IP
+      - PC 端 config_pc.yaml 里 network.jetson_ip 指向 Jetson IP
+      - ~/ros_ws/src/leading_line/jetson/    → 项目 jetson/    (软链)
+      - ~/ros_ws/src/leading_line/protocol/  → 项目 protocol/  (软链)
+      - 第一次跑：chmod +x scripts/run_jetson_pipeline.py
+
+    用法::
+      # Jetson 上
+      roslaunch leading_line leading_line_pc_monitor.launch
+      # PC 上（另一台机器）
+      python pc/main_pc.py --config config_pc.yaml
+
+      # 覆盖配置/日志
+      roslaunch leading_line leading_line_pc_monitor.launch \
+          config_path:=/abs/path/to/jetson/config.yaml log_level:=DEBUG
+
+      # 关掉 xcar / TF（只跑 jetson 流水线，外部已有底盘）
+      roslaunch leading_line leading_line_pc_monitor.launch start_xcar:=false
+  -->
+
+  <!-- ====== 可调参数 ====== -->
+  <arg name="config_path" default="$(find leading_line)/jetson/config.yaml"
+       doc="jetson 算法 + 网络 + ros + overrides 配置 YAML（绝对路径或 $(find) 展开）"/>
+  <arg name="log_level"   default="INFO"
+       doc="DEBUG / INFO / WARNING / ERROR，传给 main_jetson 的 --log-level"/>
+  <arg name="start_xcar"  default="true"
+       doc="是否启动 xcar 串口桥 + 静态 TF；外部已有底盘时设 false"/>
+
+  <!-- ====== 1) xcar 串口桥（订 /cmd_vel → /dev/ttyXCar） ====== -->
+  <group if="$(arg start_xcar)">
+    <node name="xcar_ros" pkg="leading_line" type="xcar/xcar_ros.py"
+          output="screen" respawn="true"/>
+
+    <!-- 2) 静态 TF：跟 leading_line_with_car.launch 保持一致 -->
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_sonar1"
+          args="0.15 0.1 0.07 0 0 0 /base_link /sonar1 50"/>
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_sonar2"
+          args="-0.15 0 0.03 3.1415926 0 0 /base_link /sonar2 50"/>
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser1"
+          args="0.15 -0.1 0.07 0 0 0 /base_link /laser1 50"/>
+  </group>
+
+  <!-- ====== 3) Jetson 主流水线（cv2 摄像头 + UDP/TCP + RosBridge → /cmd_vel） ======
+       required=true：流水线挂了 roslaunch 整个收摊，避免底盘空转。
+       xcar_ros 内置 1s 无 /cmd_vel 自动停车也是兜底。 -->
+  <node name="leading_line_pipeline" pkg="leading_line"
+        type="run_jetson_pipeline.py"
+        args="--config $(arg config_path) --log-level $(arg log_level)"
+        output="screen" respawn="false" required="true"/>
+</launch>

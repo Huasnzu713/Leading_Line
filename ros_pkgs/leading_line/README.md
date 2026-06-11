@@ -26,9 +26,11 @@ ros_pkgs/leading_line/
 ├── launch/
 │   ├── leading_line.launch            # 仅起 leading_line 节点
 │   ├── leading_line_with_car.launch   # xcar + realsense + leading_line（自包含）
-│   └── leading_line_teleop.launch     # 上面 + 键盘遥控
+│   ├── leading_line_teleop.launch     # 上面 + 键盘遥控
+│   └── leading_line_pc_monitor.launch # ★ 方式 A 一键：xcar + main_jetson.py（PC 监控）
 ├── scripts/
 │   ├── leading_line_node.py           # ROS 节点：image → algo → RosBridge → /cmd_vel
+│   ├── run_jetson_pipeline.py         # ★ roslaunch 包装器：init_node + main_jetson.main()
 │   └── xcar/                          # 从原 mbot 包移植过来的 xcar 桥接代码
 │       ├── xcar_ros.py                # /cmd_vel ↔ /dev/ttyXCar 串口桥
 │       ├── xcar_data.py               # zonesion 自定义二进制协议 + XcarComm
@@ -118,6 +120,41 @@ roslaunch leading_line leading_line_with_car.launch \
 ```bash
 roslaunch leading_line leading_line_with_car.launch sonar_stop_m:=0.50
 ```
+
+### 6. ★ 方式 A：PC 监控 + 自动驾驶一键启动（最常用于实车）
+跟 `leading_line_with_car.launch` 的差异：算法跑的是 `jetson/main_jetson.py`
+（自己开 cv2 摄像头 + UDP 推流给 PC + TCP 收命令），而不是订 ROS image topic
+的 `leading_line_node.py`。所以**不会起 realsense2_camera**，避免争 `/dev/video*`。
+
+```bash
+# 首次：给包装脚本可执行权限
+chmod +x $(rospack find leading_line)/scripts/run_jetson_pipeline.py
+
+# 改 jetson/config.yaml: ros.backend: "ros"  +  network.pc_ip: "PC IP"
+# 改 config_pc.yaml    : network.jetson_ip: "Jetson IP"
+
+# Jetson 上一条命令
+roslaunch leading_line leading_line_pc_monitor.launch
+
+# PC 上 Qt UI
+python pc/main_pc.py --config config_pc.yaml
+```
+
+可调参数：
+
+| arg | 默认 | 说明 |
+|---|---|---|
+| `config_path` | `$(find leading_line)/jetson/config.yaml` | jetson 算法 + 网络 + ros + overrides 配置 |
+| `log_level`   | `INFO` | 透传给 `main_jetson` 的 `--log-level` |
+| `start_xcar`  | `true` | 是否启动 xcar 串口桥 + 静态 TF；外部已有底盘时设 `false` |
+
+启动顺序由 launch 文件保证：
+1. `xcar_ros` 起来（订 `/cmd_vel`）
+2. 静态 TF 起来（base_link → sonar1/2/laser1）
+3. `run_jetson_pipeline.py` 起来 → `rospy.init_node("leading_line_pipeline")`
+   → 调 `main_jetson.main()` → 开摄像头 + UDP 推流 + RosBridge 发 `/cmd_vel`
+
+杀掉 launch 时 `required="true"` 保证流水线挂了整套都收摊，xcar 不会空转。
 
 ## ROS 话题 / 服务
 
