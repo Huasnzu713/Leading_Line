@@ -12,7 +12,7 @@
   -->
 
   <!-- 节点参数（可被命令行 <arg> 覆盖）-->
-  <arg name="config_path"    default="$(env ROS_HOME)/../src/leading_line/jetson/config.yaml"
+  <arg name="config_path"    default="$(env ROS_HOME)/../src/leading_line/config.yaml"
        doc="算法配置 YAML 路径"/>
   <arg name="image_topic"    default="/usb_cam/image_raw"
        doc="输入摄像头话题"/>
@@ -29,7 +29,7 @@
   <rosparam command="load" file="$(find leading_line)/config/params.yaml"
             ns="leading_line"/>
 
-  <node pkg="leading_line" type="leading_line_node.py" name="leading_line"
+  <node pkg="leading_line" type="node.py" name="leading_line"
         output="screen" respawn="false">
     <param name="config_path"     value="$(arg config_path)"/>
     <param name="image_topic"     value="$(arg image_topic)"/>

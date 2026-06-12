@@ -1,14 +1,14 @@
-# PC 端配置示例
-# 关键字段：network.jetson_ip / video_port / cmd_port
-# modes 段：UI 单选模式用，至少要列全 cfg 里支持的所有模式
+# PC 端配置（监控 UI）
+# 关键字段：network.vehicle_ip / video_port / cmd_port
+# modes 段：UI 单选模式用，至少要列全 config.yaml 里支持的所有模式
 
-# --- 网络：PC 连 Jetson 的目标地址 ---
+# --- 网络：PC 连车辆的目标地址 ---
 network:
-  jetson_ip: "192.168.1.50"    # jetson 在局域网里的 IP
-  video_port: 9000             # 与 jetson 端一致
-  cmd_port: 9001               # 与 jetson 端一致
+  vehicle_ip: "192.168.1.50"    # 车辆在局域网里的 IP
+  video_port: 9000              # 与车辆端一致
+  cmd_port: 9001                # 与车辆端一致
 
-# --- 模式定义（与 config_jetson.yaml / config.yaml 保持一致）---
+# --- 模式定义（与 config.yaml 保持一致）---
 # PC 这边不需要 HSV / 路径规划参数，但需要列出 label 给 UI 显示
 modes:
   blue_path:

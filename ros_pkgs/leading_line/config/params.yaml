@@ -2,8 +2,8 @@
 # 启动时通过 <rosparam command="load" file="..." /> 加载到 /leading_line/ 私有命名空间
 
 # --- 算法配置 ---
-# 指向 jetson/config.yaml（绝对路径或相对 ROS_HOME 的相对路径）
-config_path: "jetson/config.yaml"
+# 指向 config.yaml（绝对路径或相对 ROS_HOME 的相对路径）
+config_path: "config.yaml"
 
 # --- ROS 话题 ---
 # 输入：摄像头图像（xcar 默认 realsense；Wheeltec 阿克曼用 /usb_cam/image_raw）
