@@ -1,0 +1,38 @@
+perception_node:
+  ros__parameters:
+    # 通用
+    config_path: "config.yaml"
+    image_topic: "/usb_cam/image_raw"
+    ackermann_topic: "/ackermann_cmd"
+    # 阿克曼
+    wheelbase_m: 0.30
+    max_steer_deg: 30.0
+    max_speed_mps: 0.5
+    min_speed_mps: 0.05
+    # 调度
+    publish_hz: 30.0
+    default_mode: "blue_path"
+    image_timeout_s: 1.0
+    publish_debug_image: true
+    # 急停 / 电池
+    sonar_stop_m: 0.30
+    sonar_topics:
+      - "/xcar/sonar1"
+      - "/xcar/sonar2"
+      - "/xcar/sonar3"
+      - "/xcar/sonar4"
+    bat_warn_0p1V: 70
+    bat_critical_0p1V: 65
+
+pc_monitor_bridge:
+  ros__parameters:
+    config_path: "config.yaml"
+    debug_image_topic: "/debug/annotated_image"
+    cmd_host: "0.0.0.0"
+    cmd_port: 9001
+    pc_ip: "192.168.1.100"
+    video_port: 9000
+    video_jpeg_quality: 70
+    status_push_period_s: 1.0
+    start_stop_service: "/leading_line/start_stop"
+    set_mode_service: "/leading_line/set_mode"

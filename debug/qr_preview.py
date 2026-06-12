@@ -11,13 +11,17 @@ import cv2
 import numpy as np
 import yaml
 
-# 直跑兼容：把项目根加进 sys.path，让 from vehicle.* import 能解析
+# 直跑兼容：把项目根加进 sys.path；QR 识别器已迁入 ros2 包，从那里 import
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from vehicle.recognition.qr.decoder import decode_qr_codes, draw_qr_overlay
-from vehicle.recognition.qr.state_machine import QRStateMachine
+_LEADING_LINE_PARENT = _PROJECT_ROOT / "ros2_pkgs" / "leading_line"
+if str(_LEADING_LINE_PARENT) not in sys.path:
+    sys.path.insert(0, str(_LEADING_LINE_PARENT))
+
+from leading_line.recognition.qr.decoder import decode_qr_codes, draw_qr_overlay
+from leading_line.recognition.qr.state_machine import QRStateMachine
 
 
 # 默认从项目根的 config.yaml 的 debug.qr_preview 段读参数

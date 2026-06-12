@@ -9,13 +9,19 @@ import cv2
 import numpy as np
 import yaml
 
-# 直跑兼容：把项目根加进 sys.path
+# 直跑兼容：把项目根加进 sys.path，并定位 ros2 包的 leading_line/ 目录
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from vehicle.algo import color_segmenter, controller, path_planner, visualizer
-from vehicle.algo.path_planner import PathSmoother
+# 单一来源：算法实现已迁入 ros2_pkgs/leading_line/leading_line/；
+# 把包含该包的上级目录加进 sys.path，等价于 `import leading_line.X`。
+_LEADING_LINE_PARENT = _PROJECT_ROOT / "ros2_pkgs" / "leading_line"
+if str(_LEADING_LINE_PARENT) not in sys.path:
+    sys.path.insert(0, str(_LEADING_LINE_PARENT))
+
+from leading_line.algo import color_segmenter, controller, path_planner, visualizer
+from leading_line.algo.path_planner import PathSmoother
 from protocol import select_mode
 
 

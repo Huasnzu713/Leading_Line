@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<!--
+  senior_akm_robot.urdf — 阿克曼 4WD 大尺寸版
+  移植自 turn_on_wheeltec_robot/urdf/senior_akm_robot.urdf（原文件已删）。
+-->
+<robot name="senior_akm_robot">
+
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_to_base_link" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.065" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0.15 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.39 0.24 0.06"/>
+      </geometry>
+      <material name="white">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.15 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.39 0.24 0.06"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0.15 0 0" rpy="0 0 0"/>
+      <mass value="8.0"/>
+      <inertia ixx="0.05" ixy="0" ixz="0" iyy="0.10" iyz="0" izz="0.12"/>
+    </inertial>
+  </link>
+
+  <joint name="left_wheel_joint" type="continuous">
+    <origin xyz="0 0.162 0.05" rpy="1.57 0 0"/>
+    <parent link="base_link"/>
+    <child link="left_wheel_link"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <link name="left_wheel_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.04"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="right_wheel_joint" type="continuous">
+    <origin xyz="0 -0.162 0.05" rpy="1.57 0 0"/>
+    <parent link="base_link"/>
+    <child link="right_wheel_link"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <link name="right_wheel_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.04"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="left_front_joint" type="continuous">
+    <origin xyz="0.31 0.162 0.05" rpy="1.57 0 0"/>
+    <parent link="base_link"/>
+    <child link="left_front_link"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <link name="left_front_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.04"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="right_front_joint" type="continuous">
+    <origin xyz="0.31 -0.162 0.05" rpy="1.57 0 0"/>
+    <parent link="base_link"/>
+    <child link="right_front_link"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <link name="right_front_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.04"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_link_to_gyro" type="fixed">
+    <parent link="base_link"/>
+    <child link="gyro_link"/>
+    <origin xyz="0 0 0.06" rpy="0 0 0"/>
+  </joint>
+  <link name="gyro_link"/>
+
+  <joint name="gyro_to_imu" type="fixed">
+    <parent link="gyro_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <link name="imu_link"/>
+
+  <joint name="base_link_to_front_axle" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_axle_link"/>
+    <origin xyz="0.31 0 0.05" rpy="0 0 0"/>
+  </joint>
+  <link name="front_axle_link"/>
+
+  <joint name="base_link_to_sonar1" type="fixed">
+    <parent link="base_link"/>
+    <child link="sonar1"/>
+    <origin xyz="0.25 0.1 0.07" rpy="0 0 0"/>
+  </joint>
+  <link name="sonar1"/>
+
+  <joint name="base_link_to_sonar2" type="fixed">
+    <parent link="base_link"/>
+    <child link="sonar2"/>
+    <origin xyz="-0.25 0 0.03" rpy="3.1415926 0 0"/>
+  </joint>
+  <link name="sonar2"/>
+
+  <joint name="base_link_to_laser1" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser1"/>
+    <origin xyz="0.25 -0.1 0.07" rpy="0 0 0"/>
+  </joint>
+  <link name="laser1"/>
+</robot>

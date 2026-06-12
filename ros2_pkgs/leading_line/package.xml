@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>leading_line</name>
+  <version>0.3.0</version>
+  <description>
+    ROS2 Humble (Python rclpy) 视觉感知包：订阅摄像头图像，跑
+    vehicle/ 下的算法（颜色分割 → 路径规划 → 控制 → 箭头/QR override），
+    发布 ackermann_msgs/AckermannDriveStamped 到 /ackermann_cmd，
+    同时保留原 vehicle.pipeline 的 PC 监控模式（TCP 命令 + UDP 视频）。
+  </description>
+  <maintainer email="dev@leading-line.local">Leading Line Dev</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>rclpy</depend>
+  <depend>ackermann_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>cv_bridge</depend>
+
+  <!-- 视觉算法 Python 依赖（vehicle/ 同级目录）-->
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>python3-pyzbar</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

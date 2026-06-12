@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>leading_line_chassis</name>
+  <version>0.1.0</version>
+  <description>
+    C++ ROS2 Humble 底盘驱动：订阅 /ackermann_msgs/AckermannDriveStamped，
+    按阿克曼运动学换算为 (vx, vy=0, wz) 后用 zonesion 0x2B-A2 私有协议打到
+    /dev/ttyXCar 串口；同时回放 MCU 上报为 /odom、/imu、/battery_voltage、
+    /xcar/sonar[1-4]、/xcar/sensors。
+  </description>
+  <maintainer email="dev@leading-line.local">Leading Line Dev</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>ackermann_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>libserial-dev</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_cmake</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

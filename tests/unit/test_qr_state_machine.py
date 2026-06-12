@@ -7,10 +7,14 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
+_LEADING_LINE_PARENT = _PROJECT_ROOT / "ros2_pkgs" / "leading_line"
+if str(_LEADING_LINE_PARENT) not in sys.path:
+    sys.path.insert(0, str(_LEADING_LINE_PARENT))
+
 import pytest
 
-from vehicle.recognition.qr.policy import Policy
-from vehicle.recognition.qr.state_machine import QRStateMachine, State
+from leading_line.recognition.qr.policy import Policy
+from leading_line.recognition.qr.state_machine import QRStateMachine, State
 
 
 def _fresh(timeout=30.0):
