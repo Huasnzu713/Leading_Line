@@ -1,19 +1,4 @@
 # -*- coding: utf-8 -*-
-"""ROS 桥（Jetson → 实车控制）。
-
-设计目标：
-- 算法只调用 ``publish_cmd_vel(steer_deg, speed)`` —— 不需要懂 ROS
-- backend 可插拔：mock / 真 ROS (rospy)
-- 真 ROS 模式额外订阅 /xcar/sonar[1-4] 与 /xcar/sensors 做：
-  * 紧急停车：超声 < sonar_stop_m 时强制 zero
-  * 低电量告警：bat < bat_warn (0.1V) 时打 log
-
-适配车型：
-- zonesion xcar（ros_pkgs/leading_line/scripts/xcar/xcar_ros.py）：3-DOF 全向底盘，
-  /cmd_vel 是 geometry_msgs/Twist，把 steer → angular.z、speed → linear.x
-  lateral (linear.y) 默认 0（"在 4WD 上开阿克曼车"风格）。
-- 也兼容传统阿克曼底盘（只填 linear.x + angular.z）
-"""
 from __future__ import annotations
 
 import logging

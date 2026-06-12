@@ -1,42 +1,4 @@
 <launch>
-  <!--
-    方式 A 一键启动：PC 监控 + 远程启停 + 小车自动巡线。
-
-    起 3 块：
-      1) xcar_ros    : 订 /cmd_vel → /dev/ttyXCar 串口（含 /odom、/xcar/sonar1..4）
-      2) 静态 TF     : base_link → sonar1 / sonar2 / laser1
-      3) vehicle 流水线: 自己开摄像头 + UDP 视频 → PC + TCP 命令 ← PC
-                       + RosBridge publish /cmd_vel
-
-    跟 leading_line_with_car.launch 的区别：
-      - 不起 realsense2_camera，因为 vehicle/main.py 自己用
-        cv2.VideoCapture(camera.index) 抓摄像头；同时起会争 /dev/video*。
-      - 不起 node.py（订 ROS image），用 main.py（开 cv2 +
-        UDP 推流给 PC）替代。
-      - 暴露的 arg 是 config.yaml 的路径，不再是 ROS 参数集。
-
-    前置条件::
-      - config.yaml 里 ros.backend: "ros"（不是 "mock"）
-      - config.yaml 里 network.pc_ip 指向你的 PC IP
-      - PC 端 config_pc.yaml 里 network.vehicle_ip 指向车辆 IP
-      - ~/ros_ws/src/leading_line/vehicle/   → 项目 vehicle/   (软链)
-      - ~/ros_ws/src/leading_line/protocol/  → 项目 protocol/  (软链)
-      - 第一次跑：chmod +x scripts/pipeline_launcher.py
-
-    用法::
-      # 车辆上
-      roslaunch leading_line leading_line_pc_monitor.launch
-      # PC 上（另一台机器）
-      python pc/main.py --config config_pc.yaml
-
-      # 覆盖配置/日志
-      roslaunch leading_line leading_line_pc_monitor.launch \
-          config_path:=/abs/path/to/config.yaml log_level:=DEBUG
-
-      # 关掉 xcar / TF（只跑 vehicle 流水线，外部已有底盘）
-      roslaunch leading_line leading_line_pc_monitor.launch start_xcar:=false
-  -->
-
   <!-- ====== 可调参数 ====== -->
   <arg name="config_path" default="$(find leading_line)/config.yaml"
        doc="vehicle 算法 + 网络 + ros + overrides 配置 YAML（绝对路径或 $(find) 展开）"/>

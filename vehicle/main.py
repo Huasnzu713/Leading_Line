@@ -1,18 +1,4 @@
 # -*- coding: utf-8 -*-
-"""vehicle 端入口。
-
-启动后会做：
-1. 读 config.yaml（算法 + network + ros + overrides 全在里头）
-2. 打开 UDP 视频发送（→ PC 的 IP:VIDEO_PORT）
-3. 打开 TCP 命令接收（监听 0.0.0.0:CMD_PORT）
-4. 起 RosBridge（默认 mock，可改 ros）
-5. Pipeline.run() 阻塞跑摄像头 + 算法 + override + 推流 + 响应命令
-
-两种运行方式都行：::
-
-    python -m vehicle.main --config config.yaml     # 标准：包模式
-    python vehicle/main.py --config config.yaml     # 直跑：会自动把项目根加进 sys.path
-"""
 from __future__ import annotations
 
 import argparse

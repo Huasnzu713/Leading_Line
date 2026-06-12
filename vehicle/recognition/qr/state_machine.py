@@ -1,21 +1,4 @@
 # -*- coding: utf-8 -*-
-"""QR 驱动的状态机：扫描 → 解析 → 执行 → 复位。
-
-设计要点：
-  - 显式状态：IDLE / SCANNING / DECODED / POLICY_ACTIVE / REPORTING / ERROR
-  - 显式事件：tick(seconds) 推进时间，外部按事件喂
-  - 转移表：TRANSITIONS[(state, event)] -> (next_state, side_effect)
-  - 副作用：返回 (steer_deg, speed)，交给下游 controller / 协议
-  - 不直接调用 controller.decide，只输出 steer/speed，避免与引导线算法耦合
-
-使用：
-    sm = QRStateMachine()
-    sm.start()
-    while running:
-        if camera_frame 有二维码:
-            sm.on_qr_decoded(text)
-        steer, speed = sm.tick(dt=0.1)  # 每帧调一次
-"""
 from __future__ import annotations
 
 import time

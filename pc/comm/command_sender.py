@@ -1,20 +1,4 @@
 # -*- coding: utf-8 -*-
-"""PC → Jetson 的 TCP 命令发送器（带自动重连 + 心跳）。
-
-设计：
-- 长连接单 socket：UI 上点"切模式 / 开始 / 结束"是低频操作，复用一条 TCP
-- 断线自动重连：UI 后台开个 daemon 线程轮询，连接断开就 sleep 再重连
-- send() 是非阻塞的（放入队列），由后台线程实际 send
-- 返回状态用回调：on_status(kind, payload) 给 UI 更新
-- 心跳：enable_ping=True 时每 ping_interval_s 发一次 PING；收到 PONG 后算 RTT 填到 stats
-
-用法::
-
-    sender = CommandSender(jetson_ip, cmd_port, enable_ping=True, ping_interval_s=2.0)
-    sender.start(on_status=lambda k, p: print(k, p))
-    sender.send_mode("green_path")
-    ...
-"""
 from __future__ import annotations
 
 import logging

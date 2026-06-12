@@ -1,42 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""leading_line ROS 节点（ROS 1 / zonesion xcar 全向底盘）。
-
-订阅摄像头话题 → 跑算法（路径规划 + 箭头 + QR 识别）→ 算 (steer, speed)
-→ 通过 RosBridge 转 (linear.x, linear.y, angular.z) → 发布到 /cmd_vel。
-
-底盘适配：zonesion xcar（[scripts/xcar/xcar_ros.py](xcar/xcar_ros.py)）3-DOF 全向底盘。
-  - /cmd_vel 是 geometry_msgs/Twist
-  - linear.x：前进速度；linear.y：横向（4WD 全向才有意义，我们默认 0）
-  - angular.z：偏航角速度
-  - steer → angular.z 用阿克曼近似 w = v · tan(steer) / wheelbase
-    （"在 4WD 上开阿克曼车"风格，前后方向为主）
-
-依赖：
-  - vehicle.algo.color_segmenter / path_planner / controller / visualizer
-  - vehicle.overrides.FrameOverrides
-  - vehicle.ros_bridge.RosBridge  （运动学换算 + sonar/bat 安全）
-  - protocol.mode_resolver.select_mode
-
-参数（见 config/params.yaml）:
-  ~config_path     算法 YAML 路径
-  ~image_topic     输入摄像头话题（默认 /usb_cam/image_raw，xcar 用 /camera/color/image_raw）
-  ~cmd_vel_topic   输出话题（默认 /cmd_vel）
-  ~wheelbase_m     阿克曼轴距（米）
-  ~max_speed       限速
-  ~min_speed       最低速度（低于不发）
-  ~publish_hz      /cmd_vel 上限频率
-  ~default_mode    启动模式（blue_path / green_path / test）
-  ~image_timeout_s 多久没新图像就自动停车
-  ~sonar_stop_m    任一 /xcar/sonarN 距离小于此值就强制 0（米；<0 禁用）
-  ~sonar_topics    紧急停车用的超声话题列表（JSON 字符串）
-
-安全：
-  - RUNNING 中才发 /cmd_vel；STOP/IDLE 时发 0
-  - 摄像头断流超过 image_timeout_s 自动发 0
-  - RosBridge 内置 sonar < sonar_stop_m 紧急停车 + bat < bat_critical 自动停
-  - 节点关闭（Ctrl+C / SIGTERM）最后发一次 0
-"""
 from __future__ import annotations
 
 # 直跑兼容：把项目根加进 sys.path，让 from vehicle.* import 能解析

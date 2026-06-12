@@ -1,18 +1,3 @@
-# 车辆端 + 算法端完整配置（PC 端见 config_pc.yaml）
-# 由 `python -m vehicle.main --config config.yaml` 读入。
-# 包含：
-#   - network        车辆 ↔ PC 的网络端点
-#   - camera         摄像头
-#   - modes          模式预设（颜色 / 可视化）
-#   - roi / morphology / path / controller / temporal  算法本体
-#   - ros            ROS 桥（mock / ros）
-#   - vehicle_runtime 推流参数
-#   - runtime        debug.algo_preview 用
-#   - overrides      路径算法之上的箭头 + QR 识别
-#   - debug          debug/* CLI 用（QR preview 的窗口/超时等）
-#
-# 想改算法参数？直接编辑本文件即可；想加模式，复制 modes 段并填 colors/visualization。
-
 # --- 网络（车辆需要知道 PC 在哪）---
 network:
   pc_ip: "192.168.1.100"       # PC 在局域网里的 IP

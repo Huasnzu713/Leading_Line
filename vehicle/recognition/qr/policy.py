@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-"""策略解析：把 QR 文本解成 Policy 对象。
-
-支持两种文本格式：
-  1) JSON：{"policy": "TURN_LEFT", "steer_deg": -20, "speed": 0.2, "duration_s": 1.5}
-  2) 简单 key=value 分号分隔：policy=TURN_LEFT;steer_deg=-20;speed=0.2;duration_s=1.5
-
-policy 字段是必填；其他字段缺失时按缺省值处理：
-  steer_deg   = 0.0
-  speed       = 0.0
-  duration_s  = 0.0  （0 表示"一次性下发、不限时"）
-  params      = {}   （自由扩展字段，原样保留）
-"""
 from __future__ import annotations
 
 import json

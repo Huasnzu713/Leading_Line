@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""双端 socket 端到端验证（独立脚本，不依赖主程序入口）。
-
-跑这个不需要摄像头：mock 几帧 JPEG，UDP 推，TCP 发命令 + PING。
-"""
 import logging
 import socket
 import struct

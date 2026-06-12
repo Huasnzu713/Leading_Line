@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Qt 控件：把 numpy BGR 帧转成 QPixmap 喂给 QLabel。"""
 from __future__ import annotations
 
 import numpy as np

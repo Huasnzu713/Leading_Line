@@ -1,17 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Jetson → PC 的 UDP 视频发送器。
-
-设计目标：
-- 摄像头在 Jetson 端持续采集，每帧 JPEG 编码后塞进 UDP 包
-- 接收端 PC 可能掉线 / 启动晚于 Jetson：用 setblocking(False) + 静默丢包
-- 帧率可由调用方节流：上层算完算法再 send()，不要在这里加 sleep
-- 单包大小限制：UDP 理论 64KB，实际 MTU 1500 → JPEG 一般 < 100KB 直接塞一包
-
-线程模型：
-- 一个 VideoSender 实例持有一个 socket
-- send(jpeg_bytes) 是阻塞极短（一次 sendto）的非线程安全调用
-- 建议 pipeline 主循环里直接串行调用，不需要锁
-"""
 from __future__ import annotations
 
 import logging

@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-"""PC ← Jetson 的 UDP 视频接收器。
-
-设计目标：
-- 后台线程跑 recvfrom，把解出来的 BGR 帧塞进一个有界队列
-- 队列上限避免 Jetson 推太快时占爆内存；溢出时丢最老的
-- 暴露 latest_frame() 给 Qt 定时器拉图；不在主线程里做 cv2.imdecode
-
-线程模型：
-- 1 个 daemon 线程：socket → 解析 → 队列
-- 主线程：Qt UI timer（30Hz）→ latest_frame() → QImage → QLabel
-"""
 from __future__ import annotations
 
 import collections

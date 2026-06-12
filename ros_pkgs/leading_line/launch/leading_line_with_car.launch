@@ -1,24 +1,4 @@
 <launch>
-  <!--
-    完整启动：xcar 底盘（来自我们移植的 xcar_ros.py）+ realsense 摄像头（系统包）
-            + leading_line 节点。
-
-    用法::
-      roslaunch leading_line leading_line_with_car.launch
-      roslaunch leading_line leading_line_with_car.launch use_realsense:=false image_topic:=/usb_cam/image_raw
-      roslaunch leading_line leading_line_with_car.launch sonar_stop_m:=0.50
-
-    启动后：
-      - xcar_ros 订阅 /cmd_vel，串口发到 /dev/ttyXCar
-      - realsense 发 /camera/color/image_raw（如果 use_realsense=true）
-      - leading_line 节点订图像、跑算法、发 /cmd_vel
-      - 任一 /xcar/sonarN < sonar_stop_m 自动停车
-
-    前置依赖（apt 安装）:
-      ros-<distro>-realsense2-camera     # RealSense ROS 驱动
-      python3-serial (或 pip install pyserial)  # xcar 串口
-  -->
-
   <!-- 公共参数 -->
   <arg name="use_realsense"  default="true"
        doc="是否启动 RealSense（true → /camera/color/image_raw）"/>

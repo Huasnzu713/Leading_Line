@@ -1,19 +1,4 @@
 # -*- coding: utf-8 -*-
-"""QR 解码：把 BGR 图像里的二维码还原成文本。
-
-只用 OpenCV 自带的 cv2.QRCodeDetector（4.x 都带），不引入额外依赖；
-它对打印/标准二维码的识别率足够用，对模糊/倾斜/小图会返回空列表。
-
-公共 API：
-    decode_qr_codes(frame_bgr)            -> list[DecodedQR]
-    decode_qr_codes_first(frame_bgr)      -> DecodedQR | None
-
-返回的 DecodedQR 含有：
-    text:      解码文本
-    bbox:      4 个角点 (4, 1, 2) int32，OpenCV findContours 风格
-    straight:  校正后二维码图 (H, W, 3) uint8 BGR；无二维码时为 None
-    confidence: 暂留 1.0（OpenCV 单 QR 路径不返回置信度）
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -1,18 +1,4 @@
 # -*- coding: utf-8 -*-
-"""QR 系统调试入口：两种模式。
-
-  camera  实时从摄像头读流，识别二维码，喂给状态机，HUD 上画 (state, steer, speed)
-  test    读一张图，离线识别一次，喂给状态机，把结果画到结果图里
-
-二维码识别 + 状态机逻辑在 vehicle/recognition/qr/ 下，本脚本只是它们的 CV 包装。
-
-用法：
-    python debug/qr_preview.py --mode camera
-    python debug/qr_preview.py --mode camera --source tests/data/qr/qr_state_machine_samples/turn_left.png
-    python debug/qr_preview.py --mode test  --source tests/data/qr/qr_state_machine_samples/turn_left.png
-
-按 ESC 退出；按 s 保存当前帧到 qr_result/。
-"""
 from __future__ import annotations
 
 import argparse

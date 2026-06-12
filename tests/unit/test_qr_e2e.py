@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""端到端：生成 QR → 解码 → 状态机 → 校验输出。
-
-样本在 tests/data/qr/qr_state_machine_samples/；
-如果文件不存在，会自己调一次 debug/qr_samples.py 生成（这样跑测试不需要先手动生成）。
-"""
 import sys
 import subprocess
 from pathlib import Path

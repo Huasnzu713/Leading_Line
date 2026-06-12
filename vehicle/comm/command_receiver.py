@@ -1,21 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Jetson ← PC 的 TCP 命令接收器（兼服务器端文本回推）。
-
-协议见 protocol/messages.py：
-- 一条文本命令一行（"\\n" 结束）
-- 命令类型：MODE / START / STOP / PING / QUIT / ACK
-- 服务器端 accept 多个连接（Jetson 端理论上只服务一个 PC，但允许多个调试时连）
-
-主动回推（Jetson → PC）：
-- 收到 ``PING`` → 回 ``PONG <ts>``
-- 主循环调 ``push_status`` / ``push_info`` → 广播到所有已连接客户端
-- 客户端断线时通过 ``on_disconnect`` 回调通知
-
-线程模型：
-- 后台 daemon 线程跑 accept loop，主线程通过队列拿命令
-- 关闭时 close() 把 socket 关掉，accept 抛异常 → 线程退出
-- 避免每个命令都新开线程：长连接单条 socket 顺序处理
-"""
 from __future__ import annotations
 
 import logging

@@ -1,32 +1,4 @@
 # -*- coding: utf-8 -*-
-"""路径识别之外的"覆盖层"。
-
-把箭头方向识别和二维码状态机叠在路径算法之上：
-
-```
-   frame
-     │
-     ▼
- path → (steer_path, speed_path)        ← color/planner/controller
-     │
-     ▼
- FrameOverrides.tick(frame, dt)         ← 本模块
-     │
-     ├── state_machine  → (steer_qr,  speed_qr)  优先级最高
-     ├── arrow_detector    → (steer_arr, —)         中优先级
-     │
-     ▼
- final (steer, speed, source, debug)
-```
-
-优先级（高 → 低）：
-1. **QR 策略**：QR 状态机 `POLICY_ACTIVE` 时直接接管 (steer, speed)
-   - `CRUISE`（NaN, NaN）特殊：不接管，回到 path 输出
-2. **箭头方向**：高置信度时把 `steer` 替换成预定义角度（一帧立刻生效）
-3. **路径算法**：(steer_path, speed_path) 是兜底
-
-每个 override 都可以独立打开/关掉（cfg.overrides.arrow.enabled / cfg.overrides.qr.enabled）。
-"""
 from __future__ import annotations
 
 import logging

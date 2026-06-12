@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-"""state_machine 单元测试：用合成事件验证状态转移与输出。"""
 import sys
 import time
 from pathlib import Path

@@ -2,19 +2,7 @@
 <package format="2">
   <name>leading_line</name>
   <version>0.2.0</version>
-  <description><![CDATA[
-引导线自动驾驶算法的 ROS launch 包（ROS 1 catkin）。
-
-自带：
-  - leading_line_node.py：图像 → 算法 → /cmd_vel
-  - scripts/xcar/{xcar_ros,xcar_data,mbot_teleop}.py：
-    从原 mbot 包移植过来的 xcar 串口桥接（/cmd_vel ↔ /dev/ttyXCar）
-    和键盘遥控
-
-需要 apt 安装：
-  - ros-<distro>-realsense2-camera （realsense 摄像头 ROS 驱动）
-  - python3-serial 或 pip install pyserial （xcar 串口）
-]]></description>
+  <description><![CDATA[ROS 1 catkin launch 包，发布 /cmd_vel 给 xcar 底盘驱动。]]></description>
 
   <maintainer email="dev@leading-line.local">Leading Line Dev</maintainer>
   <license>MIT</license>

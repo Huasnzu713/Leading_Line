@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""roslaunch 包装器：以 ROS 节点身份拉起 vehicle/main.py。
-
-直接用 <node type="vehicle/main.py"> 有两个坑：
-  1. main.py 没 shebang，也不在 scripts/ 下，roslaunch 拉不动；
-  2. RosBridge(backend="ros") 需要 rospy.init_node 已经调过，否则
-     Publisher 注册到 /unnamed，调试时找不到节点。
-
-本包装器解决这两点：
-  a) 自己带 #!/usr/bin/env python3，装在 scripts/ 下供 roslaunch 找；
-  b) 先 rospy.init_node("leading_line_pipeline") 建立 ROS 上下文；
-  c) 过滤掉 roslaunch 注入的 __name:= / __log:= 等参数，再调主入口。
-
-启动方式（被 leading_line_pc_monitor.launch 包起来）::
-    rosrun leading_line pipeline_launcher.py \\
-        --config $(find leading_line)/config.yaml --log-level INFO
-"""
 from __future__ import annotations
 
 import sys

@@ -1,20 +1,4 @@
 <launch>
-  <!--
-    全套启动：xcar 底盘 + realsense 摄像头 + leading_line + 键盘遥控。
-
-    手动优先：mbot 自带的 mbot_teleop.py（我们移植在 scripts/xcar/）和
-    leading_line 都发 /cmd_vel；xcar 底盘按 "后写覆盖" 决定用谁的
-    （通常按键期间键盘的覆盖 leading_line）。
-
-    安全：xcar 底盘内置 1s 内无 /cmd_vel 自动停车；任一
-    /xcar/sonarN < sonar_stop_m 时 leading_line 内置的 RosBridge
-    会强制发 0。
-
-    用法::
-      roslaunch leading_line leading_line_teleop.launch
-      # 启动后另开一个终端，按 i/j/k/l 控制
-  -->
-
   <arg name="use_realsense" default="true"/>
   <arg name="image_topic"   default="/camera/color/image_raw"/>
   <arg name="default_mode"  default="blue_path"/>

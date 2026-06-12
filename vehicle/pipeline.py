@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Jetson 主流水线：摄像头 → 算法 → override → 渲染 → UDP 发图，同时响应 TCP 命令。
-
-关键设计：
-- 单线程：摄像头 read 是阻塞的，JPEG 编码/UDP 发包都是 ms 级，没必要多线程
-- TCP 命令是非阻塞轮询：get(timeout=0) 立即拿，没命令就继续做算法
-- 模式切换是"读 cfg["modes"][name]"的快路径：换模式不重启摄像头
-- ROS 接口是 publish_cmd_vel(steer, speed)；未收到 START 时不发任何指令
-- override 层：箭头 + QR 在路径算法之上叠加；QR POLICY_ACTIVE 时直接接管
-- 状态回推：每秒一次 STATUS 文本回包；状态切换 / QR 状态变化时立即推
-- 退出由 signal 或 TCP 收到 QUIT 触发；finally 里关摄像头/UDP/TCP/ROS
-"""
 from __future__ import annotations
 
 import logging

@@ -1,16 +1,4 @@
 <launch>
-  <!--
-    仅启动 leading_line 节点。
-    假设外部已经启动了：
-      - 摄像头驱动（发布到 /usb_cam/image_raw 或对应的话题）
-      - 底盘驱动（订阅 /cmd_vel，比如 turn_on_wheeltec_robot 的 wheeltec_robot 节点）
-
-    用法::
-      roslaunch leading_line leading_line.launch
-      roslaunch leading_line leading_line.launch image_topic:=/camera/rgb/image_raw
-      roslaunch leading_line leading_line.launch default_mode:=green_path
-  -->
-
   <!-- 节点参数（可被命令行 <arg> 覆盖）-->
   <arg name="config_path"    default="$(env ROS_HOME)/../src/leading_line/config.yaml"
        doc="算法配置 YAML 路径"/>

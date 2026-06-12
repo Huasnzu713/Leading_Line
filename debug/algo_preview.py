@@ -1,23 +1,4 @@
 # -*- coding: utf-8 -*-
-"""单机算法预览：不开 PC UI、不连车辆，直接在 cv2 窗口里跑算法。
-
-用途：
-  - 调算法参数（HSV / ROI / 形态学 / 平滑）时快速验证
-  - 算法跑出来的可视化效果跟 PC 端一致
-
-支持：
-  - 单张图 / 视频 / 摄像头
-  - 调试模式（2x2 网格：原图 / 道路掩码 / 地面掩码 / 结果）
-  - 静默模式（不弹窗，把可视化结果落盘到 test_result/）
-
-用法：
-  python debug/algo_preview.py --source tests/data/synth.png
-  python debug/algo_preview.py --source path/to/video.mp4
-  python debug/algo_preview.py
-  python debug/algo_preview.py --source tests/data/synth.png --debug
-
-按键：ESC 退出；s 保存当前帧；d 切换调试模式
-"""
 from __future__ import annotations
 
 import argparse

@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-"""引导线算法单元测试。
-
-合并自原 tests/ 下的 8 个独立脚本（smoke / edges / jitter / straight / steer_response /
-color_shift / degenerate / multi_blob），保持原有覆盖度，pytest 风格的
-`def test_xxx()` + `if __name__ == "__main__"` 守护，与 tests/unit/test_qr_*.py 风格一致。
-
-跑法::
-
-    python tests/unit/test_algorithm.py            # 全部
-    python -m tests.unit.test_algorithm            # 同样
-    pytest tests/unit/test_algorithm.py            # 装 pytest 时也能跑
-"""
 from __future__ import annotations
 
 import sys

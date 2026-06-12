@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-"""policy 单元测试：覆盖 JSON / key=value 解析、错误路径、policy_to_text 往返。"""
 import sys
 from pathlib import Path
 
