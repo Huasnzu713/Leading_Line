@@ -49,7 +49,7 @@ from PyQt5.QtWidgets import (
 from protocol import ALL_MODES, list_modes
 from pc.comm.command_sender import CommandSender
 from pc.comm.video_receiver import VideoReceiver
-from .widgets import frame_to_pixmap_scaled, make_placeholder_pixmap
+from .video_view import frame_to_pixmap_scaled, make_placeholder_pixmap
 
 log = logging.getLogger("pc.ui")
 

@@ -1,0 +1,149 @@
+# 车辆端 + 算法端完整配置（PC 端见 config_pc.yaml）
+# 由 `python -m vehicle.main --config config.yaml` 读入。
+# 包含：
+#   - network        车辆 ↔ PC 的网络端点
+#   - camera         摄像头
+#   - modes          模式预设（颜色 / 可视化）
+#   - roi / morphology / path / controller / temporal  算法本体
+#   - ros            ROS 桥（mock / ros）
+#   - vehicle_runtime 推流参数
+#   - runtime        debug.algo_preview 用
+#   - overrides      路径算法之上的箭头 + QR 识别
+#   - debug          debug/* CLI 用（QR preview 的窗口/超时等）
+#
+# 想改算法参数？直接编辑本文件即可；想加模式，复制 modes 段并填 colors/visualization。
+
+# --- 网络（车辆需要知道 PC 在哪）---
+network:
+  pc_ip: "192.168.1.100"       # PC 在局域网里的 IP
+  video_port: 9000             # UDP 视频端口（与 PC 端一致）
+  cmd_port: 9001               # TCP 命令端口（PC → vehicle）
+  bind_host: "0.0.0.0"         # vehicle 在哪个网卡上监听
+
+# --- 摄像头（与算法相关）---
+camera:
+  index: 0
+  width: 640
+  height: 480
+  fps: 30
+
+# --- 模式预设 ---
+modes:
+  blue_path:
+    label: "蓝色路径模式"
+    colors:
+      road: { hsv_lower: [100, 50, 50], hsv_upper: [130, 255, 255] }
+      floor: { hsv_lower: [0, 8, 15],   hsv_upper: [80, 255, 255] }
+    visualization:
+      path_color_bgr: [0, 255, 0]
+      path_thickness: 4
+      edge_color_bgr: [0, 0, 255]
+      edge_thickness: 2
+      road_overlay_bgr: [47, 130, 238]
+      road_overlay_alpha: 0.0
+      floor_overlay_bgr: [0, 165, 255]
+      floor_overlay_alpha: 0.0
+      show_hud: true
+  green_path:
+    label: "绿色路径模式"
+    colors:
+      road: { hsv_lower: [35, 50, 50],  hsv_upper: [85, 255, 255] }
+      floor: { hsv_lower: [0, 8, 15],   hsv_upper: [80, 255, 255] }
+    visualization:
+      path_color_bgr: [0, 255, 0]
+      path_thickness: 4
+      edge_color_bgr: [0, 255, 0]
+      edge_thickness: 2
+      road_overlay_bgr: [0, 180, 0]
+      road_overlay_alpha: 0.0
+      floor_overlay_bgr: [0, 165, 255]
+      floor_overlay_alpha: 0.0
+      show_hud: true
+  test:
+    label: "测试模式"
+    colors:
+      road: { hsv_lower: [0, 0, 40],    hsv_upper: [179, 80, 180] }
+      floor: { hsv_lower: [0, 0, 200],  hsv_upper: [179, 60, 255] }
+    visualization:
+      path_color_bgr: [128, 128, 128]
+      path_thickness: 4
+      edge_color_bgr: [80, 80, 80]
+      edge_thickness: 2
+      road_overlay_bgr: [128, 128, 128]
+      road_overlay_alpha: 0.0
+      floor_overlay_bgr: [255, 255, 255]
+      floor_overlay_alpha: 0.0
+      show_hud: true
+
+# --- 算法参数（与模式无关）---
+roi:
+  top_ratio: 0.40
+  bottom_ratio: 0.95
+  left_ratio: 0.0
+  right_ratio: 1.0
+morphology:
+  kernel_size: 5
+  opening_iter: 1
+  closing_iter: 2
+filter:
+  min_road_area_px: 500
+path:
+  num_samples: 20
+  smooth_window: 7
+  poly_degree: 2
+controller:
+  lookahead_row_from_bottom: 8
+  max_steer_deg: 30.0
+  base_speed: 0.30
+  min_speed: 0.10
+  curvature_k: 0.6
+temporal:
+  enabled: true
+  alpha: 0.40
+  reset_on_no_road: true
+
+# --- ROS 桥 ---
+ros:
+  backend: "mock"               # "mock" | "ros"
+  wheelbase_m: 0.30             # 阿克曼模型轴距；ROS 后端发 /cmd_vel 时用
+
+# --- 车辆端运行时（推流参数）---
+vehicle_runtime:
+  jpeg_quality: 70              # 0-100；高 = 清晰 + 大包
+  fps_cap: 30.0                 # 推流帧率上限，避免占满网卡
+
+# --- debug.algo_preview 用（cv2 窗口相关）---
+runtime:
+  print_to_stdout: true         # 把 steer/speed 持续打到 stdout
+  window_name: "Leading Line"   # cv2.imshow 窗口名
+  exit_key: 27                  # ESC 退出（ASCII 27）
+
+# --- 覆盖层（路径算法之上的箭头 + QR 识别）---
+# 全部可关；关掉后对应模块静默 no-op，不影响 path 输出
+overrides:
+  arrow:
+    enabled: true               # 默认开：每帧 detect_arrow()
+    min_darkness: 80.0          # 黑色校验阈值（> 即拒）
+    min_confidence: 0.5         # 低于此置信度不覆盖 steer
+    override_ttl_s: 0.6         # 箭头结果保留时长（让单帧检测能持续生效）
+    steer_map:                  # 方向 → 强制转向角（度）
+      "前": 0.0
+      "左": -22.0
+      "右": 22.0
+  qr:
+    enabled: true               # 默认开：每 N 帧解一次 QR
+    decode_every_n: 6           # 解码间隔（CPU 重，不每帧解）
+    policy_timeout_s: 30.0      # QR 状态机策略超时时长
+
+# --- debug/* CLI 用 ---
+# QR 预览脚本（debug/qr_preview.py）的可调参数
+debug:
+  qr_preview:
+    policy_timeout_s: 30.0      # QR 状态机策略超时
+    test_ticks: 3               # test 模式跑几轮 tick
+    camera:
+      index: 0
+    ui:
+      window_name: "QR State Machine"
+      exit_key: 27
+      save_key: "s"
