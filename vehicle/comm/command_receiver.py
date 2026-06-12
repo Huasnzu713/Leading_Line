@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Jetson ← PC 的 TCP 命令接收器（兼服务器端文本回推）。
 
 协议见 protocol/messages.py：

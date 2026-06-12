@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Jetson 主流水线：摄像头 → 算法 → override → 渲染 → UDP 发图，同时响应 TCP 命令。
 
 关键设计：

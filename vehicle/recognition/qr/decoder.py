@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """QR 解码：把 BGR 图像里的二维码还原成文本。
 
 只用 OpenCV 自带的 cv2.QRCodeDetector（4.x 都带），不引入额外依赖；

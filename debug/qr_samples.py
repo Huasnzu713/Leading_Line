@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """生成测试用 QR 图。
 
 依赖：qrcode 库（pip install qrcode）。

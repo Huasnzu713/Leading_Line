@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Jetson → PC 的 UDP 视频发送器。
 
 设计目标：

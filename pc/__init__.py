@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """PC 端：负责 Qt UI + 接收 Jetson 推流 + TCP 下发命令。
 
 子模块：

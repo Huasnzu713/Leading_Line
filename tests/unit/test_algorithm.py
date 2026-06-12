@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """引导线算法单元测试。
 
 合并自原 tests/ 下的 8 个独立脚本（smoke / edges / jitter / straight / steer_response /

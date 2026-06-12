@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """leading_line ROS 节点（ROS 1 / zonesion xcar 全向底盘）。
 
 订阅摄像头话题 → 跑算法（路径规划 + 箭头 + QR 识别）→ 算 (steer, speed)

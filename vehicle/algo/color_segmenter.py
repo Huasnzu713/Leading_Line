@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """颜色分割：根据 RGB 欧氏距离把道路和谷仓地面分别二值化。"""
 from __future__ import annotations
 

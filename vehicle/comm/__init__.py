@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Jetson 通信子包。
 
 - video_sender    ：UDP 发送编码后的视频帧给 PC

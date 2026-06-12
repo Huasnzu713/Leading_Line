@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """vehicle 端：负责摄像头采集 + 算法执行 + UDP 推流 + TCP 接令 + ROS 控制。
 
 子模块：

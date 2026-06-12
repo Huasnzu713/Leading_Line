@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """PC ← Jetson 的 UDP 视频接收器。
 
 设计目标：

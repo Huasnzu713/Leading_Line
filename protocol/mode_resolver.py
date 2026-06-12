@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """模式解析：根据模式名把 cfg["modes"][name] 合并出一份 effective config。
 
 使用方式（Jetson 端）::

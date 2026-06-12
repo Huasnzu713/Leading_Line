@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """QR 系统调试入口：两种模式。
 
   camera  实时从摄像头读流，识别二维码，喂给状态机，HUD 上画 (state, steer, speed)

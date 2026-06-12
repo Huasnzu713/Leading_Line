@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """二维码识别 + 状态机驱动的策略系统。
 
 - `decoder.decode_qr_codes(frame)` 返回识别出的 DecodedQR 列表

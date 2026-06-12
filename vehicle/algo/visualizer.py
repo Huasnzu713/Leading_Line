@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """可视化：道路半透明叠加 + 左右边界 + 中心路径 + HUD。"""
 from __future__ import annotations
 

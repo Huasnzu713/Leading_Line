@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """roslaunch 包装器：以 ROS 节点身份拉起 vehicle/main.py。
 
 直接用 <node type="vehicle/main.py"> 有两个坑：

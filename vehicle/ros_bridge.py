@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ROS 桥（Jetson → 实车控制）。
 
 设计目标：

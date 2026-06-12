@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """vehicle 端入口。
 
 启动后会做：

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """端到端：生成 QR → 解码 → 状态机 → 校验输出。
 
 样本在 tests/data/qr/qr_state_machine_samples/；
