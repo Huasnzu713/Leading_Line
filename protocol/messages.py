@@ -1,27 +1,4 @@
-"""双端通信消息格式。
-
-文本命令（PC → Jetson，TCP，一行一条）::
-
-    MODE blue_path
-    START
-    STOP
-    PING
-
-文本状态（Jetson → PC，TCP 响应/心跳）::
-
-    STATUS running
-    STATUS idle
-    INFO <free text>
-
-视频帧（Jetson → PC，UDP）::
-
-    [4 字节大端长度 N][1 字节 seq][8 字节时间戳 ms][N 字节 JPEG bytes]
-    总长 = 13 + N
-
-为什么要用长度前缀：
-- 摄像头帧按 JPEG 编码后大小不固定，UDP 是数据报，一次一包即可。
-- 长度前缀让接收端能把"长度+负载"作为一个原子包读出来，避免粘包。
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import struct

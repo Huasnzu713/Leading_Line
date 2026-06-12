@@ -1,15 +1,19 @@
-"""policy 单元测试：覆盖 JSON / key=value 解析、错误路径、policy_to_text 往返。"""
+# -*- coding: utf-8 -*-
 import sys
 from pathlib import Path
 
-# 测试在 tests/unit/，算法模块在项目根的 vehicle/recognition/qr/
+# 测试在 tests/unit/；QR 模块已迁入 ros2_pkgs/leading_line/，从那里 import
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
+_LEADING_LINE_PARENT = _PROJECT_ROOT / "ros2_pkgs" / "leading_line"
+if str(_LEADING_LINE_PARENT) not in sys.path:
+    sys.path.insert(0, str(_LEADING_LINE_PARENT))
+
 import pytest
 
-from vehicle.recognition.qr.policy import (
+from leading_line.recognition.qr.policy import (
     Policy, PolicyParseError, parse_policy, policy_to_text, KNOWN_POLICIES,
 )
 

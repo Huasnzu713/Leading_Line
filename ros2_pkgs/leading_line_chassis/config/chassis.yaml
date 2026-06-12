@@ -1,0 +1,19 @@
+chassis_node:
+  ros__parameters:
+    # 串口
+    usart_port_name: "/dev/ttyXCar"
+    serial_baud_rate: 115200
+    read_timeout_ms: 30
+    # 阿克曼运动学
+    wheelbase_m: 0.30
+    max_steer_deg: 30.0
+    max_speed_mps: 0.5
+    # 控制量 watchdog
+    cmd_watchdog_ms: 500
+    # 主循环频率
+    loop_rate_hz: 50
+    # TF
+    odom_frame_id: "odom"
+    robot_frame_id: "base_footprint"
+    gyro_frame_id: "gyro_link"
+    publish_tf: true

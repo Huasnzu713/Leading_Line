@@ -1,13 +1,4 @@
-"""命令行: 对单张/多张图片识别箭头方向.
-
-本文件位于 arrow/ 子目录, 应在 arrow/ 内运行, 样本位于上一级 tests/arrow/.
-
-用法:
-    cd arrow
-    python detect_image.py ../tests/arrow/arrow_up.png
-    python detect_image.py ../tests/arrow/*.png --save-dir out
-    python detect_image.py ../tests/arrow/arrow_up.png --show     # 弹窗显示
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import argparse

@@ -1,17 +1,4 @@
-"""PC 端入口（Qt UI）。
-
-启动后：
-1. 读 config_pc.yaml
-2. 起 UDP 视频接收（监听 0.0.0.0:video_port）
-3. 起 TCP 命令发送（连 vehicle_ip:cmd_port）
-4. 打开 Qt 主窗口
-5. 窗口关闭 → 停通信线程 → 退出
-
-两种运行方式都行：::
-
-    python -m pc.main --config config_pc.yaml      # 标准：包模式
-    python pc/main.py --config config_pc.yaml      # 直跑：会自动把项目根加进 sys.path
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import argparse

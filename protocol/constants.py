@@ -1,9 +1,4 @@
-"""双端通信常量。
-
-- PC 端默认 IP/端口：在局域网里 PC 通常是 192.168.x.x；可在 config 里覆盖
-- 模式名常量：PC UI 与 Jetson pipeline 共享，避免拼写漂移
-- 状态常量：Jetson 回报给小车的运行状态
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 # 默认网络端点（局域网示例值，可在 config.yaml 里覆盖）

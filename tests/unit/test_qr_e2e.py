@@ -1,21 +1,21 @@
-"""端到端：生成 QR → 解码 → 状态机 → 校验输出。
-
-样本在 tests/data/qr/qr_state_machine_samples/；
-如果文件不存在，会自己调一次 debug/qr_samples.py 生成（这样跑测试不需要先手动生成）。
-"""
+# -*- coding: utf-8 -*-
 import sys
 import subprocess
 from pathlib import Path
 
-# 测试在 tests/unit/，算法在项目根的 vehicle/recognition/qr/，样本在 tests/data/qr/
+# 测试在 tests/unit/；QR 模块已迁入 ros2_pkgs/leading_line/，从那里 import
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
+_LEADING_LINE_PARENT = _PROJECT_ROOT / "ros2_pkgs" / "leading_line"
+if str(_LEADING_LINE_PARENT) not in sys.path:
+    sys.path.insert(0, str(_LEADING_LINE_PARENT))
+
 import cv2
 
-from vehicle.recognition.qr.decoder import decode_qr_codes
-from vehicle.recognition.qr.state_machine import QRStateMachine
+from leading_line.recognition.qr.decoder import decode_qr_codes
+from leading_line.recognition.qr.state_machine import QRStateMachine
 
 
 SAMPLES_DIR = _PROJECT_ROOT / "tests" / "data" / "qr" / "qr_state_machine_samples"

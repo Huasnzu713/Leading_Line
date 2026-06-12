@@ -1,19 +1,4 @@
-"""模式解析：根据模式名把 cfg["modes"][name] 合并出一份 effective config。
-
-使用方式（Jetson 端）::
-
-    from protocol import select_mode
-    cfg = load_config("config.yaml")
-    effective = select_mode(cfg, "green_path")
-    # effective["colors"]["road"]["hsv_lower"] 已经是绿色的 HSV 范围
-
-为什么需要这层：
-- config.yaml 把"会随模式变化"的部分（colors/visualization）抽到 modes.* 下
-- 但下游算法（color_segmenter / path_planner / controller / visualizer）读的是
-  顶层 cfg["colors"] / cfg["visualization"]
-- select_mode 把两段拼起来，下游代码完全不用知道有"模式"概念
-- 同时返回一个 mode_meta 字典（label / 名字等），给 UI 显示用
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import copy

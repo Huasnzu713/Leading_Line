@@ -1,17 +1,4 @@
-"""QR 系统调试入口：两种模式。
-
-  camera  实时从摄像头读流，识别二维码，喂给状态机，HUD 上画 (state, steer, speed)
-  test    读一张图，离线识别一次，喂给状态机，把结果画到结果图里
-
-二维码识别 + 状态机逻辑在 vehicle/recognition/qr/ 下，本脚本只是它们的 CV 包装。
-
-用法：
-    python debug/qr_preview.py --mode camera
-    python debug/qr_preview.py --mode camera --source tests/data/qr/qr_state_machine_samples/turn_left.png
-    python debug/qr_preview.py --mode test  --source tests/data/qr/qr_state_machine_samples/turn_left.png
-
-按 ESC 退出；按 s 保存当前帧到 qr_result/。
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import argparse
@@ -24,13 +11,17 @@ import cv2
 import numpy as np
 import yaml
 
-# 直跑兼容：把项目根加进 sys.path，让 from vehicle.* import 能解析
+# 直跑兼容：把项目根加进 sys.path；QR 识别器已迁入 ros2 包，从那里 import
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from vehicle.recognition.qr.decoder import decode_qr_codes, draw_qr_overlay
-from vehicle.recognition.qr.state_machine import QRStateMachine
+_LEADING_LINE_PARENT = _PROJECT_ROOT / "ros2_pkgs" / "leading_line"
+if str(_LEADING_LINE_PARENT) not in sys.path:
+    sys.path.insert(0, str(_LEADING_LINE_PARENT))
+
+from leading_line.recognition.qr.decoder import decode_qr_codes, draw_qr_overlay
+from leading_line.recognition.qr.state_machine import QRStateMachine
 
 
 # 默认从项目根的 config.yaml 的 debug.qr_preview 段读参数

@@ -3,6 +3,8 @@
 轻量、可解释、不依赖深度学习的引导线（leading line）算法。  
 适用场景：道路颜色固定、地面颜色固定、无其他车辆的受控环境（典型为谷仓内部通道）。
 
+> **2026-06 重构**：运动控制从 ROS1 + Python 桥接迁移到 **ROS2 Humble + 阿克曼架构**。底盘串口驱动用 C++/rclcpp 实现，视觉感知复用 `leading_line.algo`/`leading_line.recognition`（不重写 cv2/QR/箭头）。原 ROS1 串口桥 `xcar_ros.py`/`xcar_protocol.py`/`mbot_teleop.py`、参考源码 `turn_on_wheeltec_robot/`/`wheeltec_robot_rc/`、Python 控制版本 `vehicle/ros_bridge.py` 全部删除；2026-06-12 起 `vehicle/` 整个目录**合并到 `ros2_pkgs/leading_line/leading_line/`，单一来源**。新内容见 [ros2_pkgs/](ros2_pkgs/)。
+
 ## 技术栈
 
 | 类别 | 选型 | 用途 |
@@ -12,9 +14,13 @@
 | 配置 | PyYAML ≥ 6.0 | 加载 `config.yaml` |
 | QR 生成 | `qrcode` ≥ 7.0 | 仅用于生成测试 QR 样本；解码走 OpenCV 自带 `QRCodeDetector` |
 | PC UI | PyQt5 ≥ 5.15 | Qt 监控窗口（视频 + 模式选择 + 启停）|
-| 语言 | Python 3.10+ | 显式类型注解 `from __future__ import annotations` |
+| ROS 端 | **ROS2 Humble** + C++ (rclcpp) + Python (rclpy) | 底盘驱动 + 视觉感知 + PC 监控桥 |
+| 底盘协议 | zonesion 0x2B-A2 私有协议 | 与 xcar MCU 串口通信（115200）|
+| 底盘消息 | `ackermann_msgs/AckermannDriveStamped` | ROS 顶层运动接口（阿克曼标准）|
+| 串口 | `libserial-dev` (C++) | 替代原 Python `pyserial` |
+| 语言 | Python 3.10+ + C++17 | Python 算法/C++ 底盘 |
 
-无深度学习框架，无外部硬件依赖（PC 端只要 OpenCV + Qt；车辆端可选挂 ROS 1）。
+无深度学习框架。
 
 ## 1. 仓库结构
 
@@ -25,81 +31,29 @@ Leading_Line/
 ├── config.yaml                    # ★ 车辆端 + 算法端配置（network / camera / modes / 算法段 / ros / overrides / debug）
 ├── config_pc.yaml                 # PC 端配置（network.vehicle_ip / video_port / cmd_port / modes 副本）
 │
-├── pc/                            # ★ PC 监控端
+├── pc/                            # ★ PC 监控端（Qt UI + TCP/UDP）
 │   ├── main.py                    #   入口（python -m pc.main）
-│   ├── ui/
-│   │   ├── main_window.py         #   Qt 主窗口：左视频 / 右菜单 / 底部状态栏
-│   │   └── video_view.py          #   BGR → QPixmap 转换
-│   └── comm/
-│       ├── command_sender.py      #   PC→车辆 TCP（带重连 + 心跳）
-│       └── video_receiver.py      #   车辆→PC UDP（后台线程 + 有界队列）
+│   ├── ui/{main_window.py, video_view.py}
+│   └── comm/{command_sender.py, video_receiver.py}
 │
-├── vehicle/                       # ★ 车辆端（不绑死 Jetson 硬件）
-│   ├── main.py                    #   入口（python -m vehicle.main）
-│   ├── pipeline.py                #   主循环：摄像头 → 算法 → override → 渲染 → UDP 推流 + 响应命令
-│   ├── overrides.py               #   路径算法之上的覆盖层：箭头 + QR
-│   ├── ros_bridge.py              #   算法 → /cmd_vel（mock / ROS 双后端 + sonar/bat 安全闸）
-│   ├── algo/                      #   引导线算法核心
-│   │   ├── color_segmenter.py     #     HSV 分割 + 形态学 + 最大连通块
-│   │   ├── path_planner.py        #     边缘采样 + 中点 + 异常值剔除 + 平滑拟合 + 跨帧 EMA
-│   │   ├── controller.py          #     前瞻点偏差 → (steer, speed) + 曲率感知降速
-│   │   └── visualizer.py          #     道路外轮廓 + 中心引导线 + 前瞻点 + HUD
-│   ├── comm/
-│   │   ├── video_sender.py        #     UDP 视频发送（带 seq/ts 头）
-│   │   └── command_receiver.py    #     TCP 命令接收（多线程）
-│   └── recognition/               #   覆盖层识别
-│       ├── arrow_detector.py      #     黑色箭头方向识别（Otsu + 凸包多边形 + 内角打分）
-│       └── qr/
-│           ├── decoder.py         #     OpenCV QRCodeDetector 包装
-│           ├── state_machine.py   #     显式状态机：IDLE → SCANNING → DECODED → POLICY_ACTIVE → REPORTING
-│           └── policy.py          #     QR 策略文本解析（JSON / key=value）
+├── vehicle/                       # （已删除 — 合并到 ros2_pkgs/leading_line/leading_line/，单一来源）
+│   # 历史：原 vehicle/pipeline.py + vehicle/{algo,recognition,overrides.py,comm}/
+│   # 现位于 ros2_pkgs/leading_line/leading_line/{pipeline.py,algo/,recognition/,overrides.py,comm/}
 │
 ├── debug/                         # ★ 调试 CLI 集合
-│   ├── README.md
-│   ├── algo_preview.py            #   单机算法预览（cv2 窗口）
-│   ├── arrow_image.py             #   离线箭头识别（图片）
-│   ├── arrow_webcam.py            #   实时箭头识别（摄像头）
-│   ├── arrow_samples.py           #   生成箭头测试样本
-│   ├── qr_preview.py              #   QR 状态机调试（摄像头 / 离线）
-│   └── qr_samples.py              #   生成 QR 策略样本
 │
-├── protocol/                      # ★ 双端共享
-│   ├── constants.py               #   模式 / 状态 / 端口常量
-│   ├── messages.py                #   TCP 文本命令 + UDP 视频帧协议
-│   └── mode_resolver.py           #   cfg["modes"][name] → effective cfg
+├── protocol/                      # ★ 双端共享字节协议
 │
 ├── tests/                         # ★ 测试
-│   ├── unit/
-│   │   ├── test_algorithm.py      #   引导线算法 10 个测试（合并原 8 个）
-│   │   ├── test_qr_policy.py      #   QR 策略解析
-│   │   ├── test_qr_state_machine.py
-│   │   ├── test_qr_e2e.py         #   QR 解码 + 状态机端到端
-│   │   └── test_comm.py           #   PC ↔ 车辆 socket 双端联通
-│   ├── data/                      #   测试样本（不入 pytest 自动发现）
-│   │   ├── synth.png              #     合成图（make_synth.py 生成）
-│   │   ├── test_image.png         #     抖动测试用
-│   │   ├── arrow/                 #     箭头测试样本 + README
-│   │   └── qr/qr_state_machine_samples/  # QR 策略样本
-│   └── tools/
-│       └── make_synth.py          #   合成图生成器
+│   └── unit/                      #   10 个算法测试 + 4 个 QR 测试 + 1 个 PC↔vehicle 协议 e2e
 │
-└── ros_pkgs/leading_line/         # ROS 1 launch 包
-    ├── README.md                  #   ROS 端使用文档
-    ├── CMakeLists.txt
-    ├── package.xml
-    ├── launch/                    #   4 个 launch 文件
-    │   ├── leading_line.launch            # 仅起 leading_line 节点
-    │   ├── leading_line_with_car.launch   # xcar + realsense + leading_line
-    │   ├── leading_line_teleop.launch     # 上面 + 键盘遥控
-    │   └── leading_line_pc_monitor.launch # ★ 方式 A：xcar + vehicle/main.py（PC 监控）
-    ├── scripts/
-    │   ├── node.py                #   ROS 节点：订 image_topic → 算法 → /cmd_vel
-    │   ├── pipeline_launcher.py   #   roslaunch 包装器：init_node + vehicle.main()
-    │   └── xcar/                  #   zonesion xcar 串口桥（自带，从 mbot 包移植）
-    │       ├── xcar_ros.py        #     /cmd_vel ↔ /dev/ttyXCar
-    │       ├── xcar_protocol.py   #     zonesion 二进制协议
-    │       └── mbot_teleop.py     #     键盘遥控
-    └── config/params.yaml         #   ROS 节点参数
+└── ros2_pkgs/                     # ★ ROS2 Humble 运动控制（替换原 ros_pkgs/ + turn_on_wheeltec_robot/）
+    ├── README.md                  #   详细说明
+    ├── build.sh                   #   colcon build 一键
+    ├── check_topics.sh            #   启动后跑的话题/服务/参数自检
+    ├── mock_serial.py             #   桌面 mock 串口（zonesion 0x2B-A2 注入）
+    ├── leading_line_chassis/      #   C++ 底盘驱动：/ackermann_cmd → serial → /odom /imu /battery
+    └── leading_line/              #   rclpy 视觉感知 + PC 桥：/image → algo → /ackermann_cmd
 ```
 
 ## 2. 算法流程
@@ -144,16 +98,22 @@ JPEG 编码 → UDP 发给 PC；RUNNING 时把 (steer, speed) → RosBridge → 
 pip install -r requirements.txt
 ```
 
-**额外 ROS 端依赖**（如果用 `ros_pkgs/leading_line/launch/`）：
+**额外 ROS2 端依赖**（如果用 `ros2_pkgs/`）：
 
 ```bash
-sudo apt install ros-<distro>-realsense2-camera python3-serial
-# 或：pip install pyserial
+sudo apt install -y \
+    ros-humble-ackermann-msgs \
+    ros-humble-cv-bridge \
+    ros-humble-tf2-ros \
+    ros-humble-robot-state-publisher \
+    ros-humble-usb-cam \
+    libserial-dev \
+    python3-pyzbar
 ```
 
 ## 4. 启动方式
 
-### 4.1 PC 端（Qt 监控 UI）
+### 4.1 PC 端（Qt 监控 UI，不变）
 
 ```bash
 python pc/main.py --config config_pc.yaml
@@ -164,46 +124,77 @@ python pc/main.py --config config_pc.yaml
 - 右：模式单选 + 开始/结束按钮 + 状态栏
 - 底部：ACK / INFO / 连接状态
 
-### 4.2 车辆端（双端模式主程序）
+### 4.2 车辆端（CV2 + TCP/UDP 老链路，作为 ROS2 节点运行）
 
 ```bash
-python vehicle/main.py --config config.yaml
-# 或：python -m vehicle.main --config config.yaml
+# ROS2 节点形式（推荐；vehicle_pipeline 在 rclpy 里跑 headless pipeline + 推流 + 命令）
+ros2 run leading_line vehicle_pipeline --ros-args -p config_path:=$PWD/config.yaml
 ```
 
 启动后会：
 1. 读 `config.yaml`（算法 + network + ros + overrides）
 2. 打开 UDP 视频发送（→ PC 的 `network.pc_ip:video_port`）
 3. 打开 TCP 命令接收（监听 `0.0.0.0:cmd_port`）
-4. 起 `RosBridge`（默认 `mock`；实车改 `"ros"`）
+4. `publish_cmd` 回调里把 (steer, speed) 推到 ackermann_bridge（rclpy 发布到 `/ackermann_cmd`）
 5. 主循环跑：摄像头 → 算法 → override → 渲染 → UDP 发图，响应 TCP 命令
 
-### 4.3 ROS 1 launch（实车部署常用）
+### 4.3 ROS2 Humble 全栈（实车部署推荐）
 
 ```bash
 # 编译
-cd ~/ros_ws && catkin_make && source devel/setup.bash
+mkdir -p ~/ros2_ws/src
+ln -s $PWD/ros2_pkgs/leading_line_chassis ~/ros2_ws/src/
+ln -s $PWD/ros2_pkgs/leading_line ~/ros2_ws/src/
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --packages-select leading_line_chassis leading_line
+source install/setup.bash
 
-# 把项目根的 vehicle/ 和 protocol/ 软链到包内
-ln -s /path/to/Leading_Line/vehicle   ~/ros_ws/src/leading_line/vehicle
-ln -s /path/to/Leading_Line/protocol ~/ros_ws/src/leading_line/protocol
+# 仅底盘（外部已有视觉）
+ros2 launch leading_line_chassis chassis.launch.py
 
-# 仅跑算法（外部已有摄像头 + 底盘）
-roslaunch leading_line leading_line.launch
+# 仅视觉（外部已有底盘 + 摄像头）
+ros2 launch leading_line perception.launch.py
 
-# 完整启动：xcar + realsense + 算法
-roslaunch leading_line leading_line_with_car.launch
+# 全栈：底盘 + USB 摄像头 + 视觉
+ros2 launch leading_line full_stack.launch.py \
+    usart_port_name:=/dev/ttyXCar \
+    camera_backend:=usb_cam
 
-# 加键盘遥控
-roslaunch leading_line leading_line_teleop.launch
-
-# ★ 方式 A 一键：xcar + vehicle/main.py（PC 监控）—— 最常用
-roslaunch leading_line leading_line_pc_monitor.launch
+# 全栈 + PC 监控
+ros2 launch leading_line full_stack.launch.py \
+    usart_port_name:=/dev/ttyXCar \
+    camera_backend:=usb_cam \
+    use_pc_monitor:=true \
+    pc_ip:=192.168.1.100
 ```
 
-详见 [`ros_pkgs/leading_line/README.md`](ros_pkgs/leading_line/README.md)。
+详见 [`ros2_pkgs/README.md`](ros2_pkgs/README.md)。
 
-### 4.4 调试入口
+### 4.4 桌面联调（mock 串口，无 Jetson）
+
+```bash
+# 1) 装 socat
+sudo apt install socat
+
+# 2) 虚拟串口对
+socat -d -d pty,raw,echo=0 pty,raw,echo=0 &
+# 假设 /dev/ttyVCar0 ↔ /dev/ttyVCar1
+
+# 3) 启底盘
+ros2 launch leading_line_chassis chassis.launch.py usart_port_name:=/dev/ttyVCar0 &
+
+# 4) 另一窗口启 mock 串口注入
+python3 ros2_pkgs/mock_serial.py /dev/ttyVCar1
+
+# 5) 启视觉
+ros2 launch leading_line perception.launch.py
+ros2 service call /leading_line/start_stop std_srvs/srv/SetBool "{data: true}"
+ros2 topic echo /ackermann_cmd
+ros2 topic hz /odom     # 期望 ~50 Hz
+```
+
+### 4.5 调试入口
 
 ```bash
 # 单机算法预览（cv2 窗口，避开 Qt 和双端）
@@ -217,22 +208,34 @@ python debug/qr_preview.py --mode test --source tests/data/qr/qr_state_machine_s
 
 完整列表见 [`debug/README.md`](debug/README.md)。
 
-## 5. 双端架构（PC ↔ 车辆）
+## 5. 双端架构（PC ↔ 车辆 + ROS2 内部）
 
 ```
 ┌────────────────────────┐         UDP (JPEG 视频)          ┌────────────────────────┐
-│        车辆            │  ─────────────────────────►  │          PC             │
-│                        │                                 │                        │
-│  vehicle/main.py       │                                 │  pc/main.py (Qt)       │
-│   └─ pipeline.py       │  ◄─────────────────────────  │   └─ ui/main_window.py │
-│       ├─ camera        │         TCP (文本命令)          │       ├─ 视频显示       │
-│       ├─ color/planner │            "MODE blue_path"     │       ├─ 模式菜单       │
-│       ├─ controller    │            "START" / "STOP"    │       ├─ 开始/结束按钮  │
-│       └─ ros_bridge    │            "PING" / "ACK"      │       └─ 状态栏         │
-│            │           │                                 │            │           │
-│            ▼           │                                 │            ▼           │
-│     /cmd_vel (ROS)     │                                 │      CommandSender     │
-└────────────────────────┘                                 └────────────────────────┘
+│        车辆 Jetson     │  ─────────────────────────►  │          PC             │
+│  Ubuntu 22.04 + Humble │                                 │   pc/main.py (Qt)      │
+│                        │  ◄─────────────────────────  │                         │
+│  ┌──────────────────┐  │         TCP (文本命令)          │   └─ ui/main_window.py │
+│  │  leading_line/   │  │            "MODE blue_path"     │       ├─ 视频显示       │
+│  │   pipeline.py    │  │            "START/STOP/PING"   │       ├─ 模式菜单       │
+│  │  ├─ camera       │  │                                 │       └─ 状态栏         │
+│  │  ├─ algo/*       │  │                                 │                         │
+│  │  └─ publish_cmd  │  │                                 └────────────────────────┘
+│  │        │         │  │
+│  │        ▼         │  │
+│  │ ackermann_bridge │  │        ROS2 内部
+│  │  /ackermann_cmd  │  │  ┌──────────────────────────┐
+│  └──────────────────┘  │  │  leading_line_chassis     │
+│                        │  │  (C++ rclcpp)             │
+│                        │  │  - ackermann → (vx,vy,wz) │
+│                        │  │  - serial 0x2B-A2         │
+│                        │  │  - /odom /imu /battery    │
+│                        │  │  - watchdog 500ms         │
+│                        │  └─────────────┬──────────────┘
+│                        │                │ /dev/ttyXCar
+└────────────────────────┘                ▼
+                                 zonesion xcar MCU
+                                 (阿克曼 4WD 底盘)
 ```
 
 ### 5.1 通信协议
@@ -286,7 +289,7 @@ PC UI 上"蓝色路径模式 / 绿色路径模式 / 测试模式"对应 `config.
 - **controller**：`lookahead_row_from_bottom` 前瞻点、`max_steer_deg`、`base_speed`、`min_speed`、`curvature_k` 曲率降速系数
 - **visualization**（在 modes 内）：`path_color_bgr`（绿）、`edge_color_bgr`（红）、`road_overlay_bgr`（橙，已停用）、`road_overlay_alpha`（=0 表示关闭）、`show_hud`
 - **temporal**：`enabled`、`alpha`（EMA 系数）、`reset_on_no_road`（道路消失时重置历史）
-- **ros**：`backend`（"mock" / "ros"）、`wheelbase_m`
+- **ros**：`backend`（"mock" / "ros"）、`wheelbase_m`（仅 PC 监控链路需要；ROS2 端通过 launch 参数传给底盘）
 - **vehicle_runtime**：`jpeg_quality`、`fps_cap`
 - **overrides.arrow / overrides.qr**：覆盖层模块开关与参数
 - **debug.qr_preview**：`debug/qr_preview.py` 用
@@ -324,6 +327,13 @@ python tests/unit/test_qr_e2e.py            # 解码 + 状态机端到端
 # 双端 socket 联通
 python tests/unit/test_comm.py
 
+# ROS2 视觉感知（无 ROS 依赖，纯算法）
+python ros2_pkgs/leading_line/test/test_perception_pipeline.py
+python ros2_pkgs/leading_line/test/test_ackermann_bridge.py
+
+# ROS2 底盘（C++ GTest，需 colcon build 后跑）
+colcon test --packages-select leading_line_chassis
+
 # 工具
 python tests/tools/make_synth.py            # 重新生成合成图 tests/data/synth.png
 ```
@@ -345,32 +355,78 @@ python tests/tools/make_synth.py            # 重新生成合成图 tests/data/s
 
 详见 [`debug/README.md`](debug/README.md)。
 
-## 10. 安全设计
+## 10. ROS2 Humble 阿克曼架构（新）
 
-| 触发 | 反应 |
-|---|---|
-| 状态 ≠ RUNNING | 持续发 0 |
-| 摄像头断流 > `image_timeout_s` | 发 0 |
-| 任一 `/xcar/sonarN` < `sonar_stop_m` | 立刻发 0（log warn） |
-| `/xcar/sensors` bat < 6.5V | 强制停车（log error） |
-| `/xcar/sensors` bat < 7.0V | 打 warn 日志 |
-| 节点关闭（Ctrl+C / SIGTERM） | 最后发一次 0 |
-| xcar 底盘内置 1s 无 /cmd_vel | 自动停车（兜底）|
+2026-06 迁移。原 ROS1 + Python 串口桥链路（`ros_pkgs/leading_line/scripts/xcar/{xcar_ros.py, xcar_protocol.py, mbot_teleop.py}`）已全部删除，参考源码 `turn_on_wheeltec_robot/`、`wheeltec_robot_rc/`、Python 控制版本 `vehicle/ros_bridge.py` 同样删除；2026-06-12 起 `vehicle/` 整个目录**合并到 `ros2_pkgs/leading_line/leading_line/`，单一来源**。
 
-安全实现统一在 [`vehicle/ros_bridge.py`](vehicle/ros_bridge.py) 的 `_check_estop` / `_check_battery`，
-被 ROS 节点和 UDP pipeline 共享。
+新的运动控制栈在 [ros2_pkgs/](ros2_pkgs/) 下：
 
-## 11. 跨平台兼容
+| 包 | 语言 | 作用 |
+|---|---|---|
+| `leading_line_chassis` | **C++ / rclcpp** | 订阅 `/ackermann_cmd` (`ackermann_msgs/AckermannDriveStamped`)；按阿克曼自行车模型换算 `(steering, speed) → (vx, vy=0, wz)`；用 zonesion 0x2B-A2 协议打 `/dev/ttyXCar`；50 Hz 主循环回放 `/odom` `/imu` `/battery_voltage` `/xcar/sonar[1-4]` `/xcar/sensors`；watchdog 500 ms 无命令自动发 0；on_shutdown 发 0 |
+| `leading_line` | **Python / rclpy** | 视觉感知：订阅 `/image` → 跑 `leading_line.algo` 系列算法 → 发布 `/ackermann_cmd`；提供 `~/start_stop`、`~/set_mode` 服务；可选 `pc_monitor_bridge` 桥接 PC TCP/UDP 监控；同时包含历史 `vehicle/pipeline.py` 改造后的 headless pipeline（`ros2 run leading_line vehicle_pipeline`） |
+
+### 编译 / 运行
+
+```bash
+# 编译
+mkdir -p ~/ros2_ws/src
+ln -s $PWD/ros2_pkgs/leading_line_chassis ~/ros2_ws/src/
+ln -s $PWD/ros2_pkgs/leading_line ~/ros2_ws/src/
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --packages-select leading_line_chassis leading_line
+colcon test  --packages-select leading_line_chassis leading_line
+
+# 全栈
+source install/setup.bash
+ros2 launch leading_line full_stack.launch.py \
+    usart_port_name:=/dev/ttyXCar \
+    camera_backend:=usb_cam \
+    use_pc_monitor:=true \
+    pc_ip:=192.168.1.100
+```
+
+### 关键 ROS 接口
+
+| 方向 | 名称 | 类型 | 说明 |
+|---|---|---|---|
+| sub | `/ackermann_cmd` | `ackermann_msgs/AckermannDriveStamped` | 唯一运动输入 |
+| pub | `/odom` | `nav_msgs/Odometry` | wheel odometry + TF odom→base_footprint |
+| pub | `/imu` | `sensor_msgs/Imu` | zonesion 无 IMU，用 odom 角速度填 |
+| pub | `/battery_voltage` | `std_msgs/Float32` | 0.1V 单位的电池电压 |
+| pub | `/xcar/sonar[1-4]` | `sensor_msgs/Range` | 4 路超声 |
+| pub | `/xcar/sensors` | `std_msgs/Int32MultiArray` | 透传 zonesion 0x03 |
+| srv | `/leading_line/start_stop` | `std_srvs/SetBool` | True→RUNNING, False→STOPPED |
+| srv | `/leading_line/set_mode` | `std_srvs/SetBool` | data="blue_path"/"green_path"/"test" |
+
+## 11. 安全设计
+
+| 触发 | 反应 | 实现位置 |
+|---|---|---|
+| 状态 ≠ RUNNING | 持续发 0 | `perception_node._tick` |
+| 摄像头断流 > `image_timeout_s` | 发 0 | `perception_node._tick` |
+| 任一 `/xcar/sonarN` < `sonar_stop_m` | 立刻发 0（log warn）| `perception_node._check_estop` |
+| `/xcar/sensors` bat < `bat_critical_0p1V` (6.5V) | 强制停车（log error）| `perception_node._check_battery` |
+| `/xcar/sensors` bat < `bat_warn_0p1V` (7.0V) | 打 warn 日志 | `perception_node._on_sensors` |
+| `/ackermann_cmd` 缺失 > `cmd_watchdog_ms` (500ms) | 底盘自动发 0 | `ChassisNode.tick` |
+| 节点关闭（Ctrl+C / SIGTERM） | 最后发一次 0 | `rclcpp::on_shutdown` 回调 + dtor |
+| 串口 read 异常 / BCC 失败 | 1Hz 日志 + 1s 重连 | `ChassisNode.reconnectSerial` |
+| xcar MCU 内置 1s 无下行命令 | 自动停车（兜底）| MCU 固件 |
+
+## 12. 跨平台兼容
 
 | 平台 | 兼容性 |
 |---|---|
-| zonesion xcar (4WD 全向) | ✅ 完全适配（默认）|
-| 阿克曼底盘（turn_on_wheeltec_robot）| ✅ 仍可用：launch 改成对应底盘包，`linear.y=0` 自动忽略 |
-| 纯差速底盘（带 Twist 支持）| ✅ `linear.y=0` 忽略即可 |
-| ROS 2（rclpy）| ⚠️ 当前节点用 rospy；要迁到 ROS 2 需要重写 import 和 spin |
+| zonesion xcar (4WD 阿克曼, 0x2B-A2 协议) | ✅ 完全适配（默认） |
+| Wheeltec 24 字节 STM32 协议 | ⚠️ 改 `src/protocol.cpp` 即可（结构风格已照搬 `turn_on_wheeltec_robot`） |
+| 纯差速底盘（带 `Twist` 支持）| ⚠️ 加一个 `/cmd_vel → /ackermann_cmd` 桥节点即可（推荐 `twist_to_ackermann`）|
+| ros2_control + diff_drive_controller | 🔜 未来重构路径：把 `chassis_node` 拆成 `ros2_control` 硬件接口 |
 
-## 12. 相关文档
+## 13. 相关文档
 
 - [`debug/README.md`](debug/README.md) — 调试工具使用说明
-- [`ros_pkgs/leading_line/README.md`](ros_pkgs/leading_line/README.md) — ROS 端使用文档
+- [`ros2_pkgs/README.md`](ros2_pkgs/README.md) — **ROS2 端使用文档（主入口）**
+- [`ros2_pkgs/leading_line_chassis/README.md`](ros2_pkgs/leading_line_chassis/README.md) — C++ 底盘节点 API
+- [`ros2_pkgs/leading_line/README.md`](ros2_pkgs/leading_line/README.md) — rclpy 视觉节点 API
 - [`tests/data/arrow/README.md`](tests/data/arrow/README.md) — 箭头测试样本说明

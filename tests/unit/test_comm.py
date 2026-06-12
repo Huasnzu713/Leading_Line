@@ -1,7 +1,4 @@
-"""双端 socket 端到端验证（独立脚本，不依赖主程序入口）。
-
-跑这个不需要摄像头：mock 几帧 JPEG，UDP 推，TCP 发命令 + PING。
-"""
+# -*- coding: utf-8 -*-
 import logging
 import socket
 import struct
@@ -14,13 +11,17 @@ import cv2
 import numpy as np
 import yaml
 
-# 测试在 tests/unit/，项目根是 parents[2]
+# 测试在 tests/unit/，项目根是 parents[2]；comm 模块已迁入 ros2 包
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from vehicle.comm.video_sender import VideoSender
-from vehicle.comm.command_receiver import CommandReceiver
+_LEADING_LINE_PARENT = _PROJECT_ROOT / "ros2_pkgs" / "leading_line"
+if str(_LEADING_LINE_PARENT) not in sys.path:
+    sys.path.insert(0, str(_LEADING_LINE_PARENT))
+
+from leading_line.comm.video_sender import VideoSender
+from leading_line.comm.command_receiver import CommandReceiver
 from pc.comm.video_receiver import VideoReceiver
 from pc.comm.command_sender import CommandSender
 from protocol import encode_video_frame, decode_video_frame, encode_status

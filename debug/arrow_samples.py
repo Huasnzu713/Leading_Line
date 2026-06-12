@@ -1,15 +1,4 @@
-"""生成示例箭头图片用于测试和演示.
-
-本文件位于 arrow/ 子目录, 应在 arrow/ 内运行, 默认输出到 ../tests/arrow/.
-
-用法:
-    cd arrow
-    python generate_samples.py                            # 默认写到 ../tests/arrow/
-    python generate_samples.py --out ../tests/arrow       # 同上, 显式指定
-    python generate_samples.py --size 300                 # 自定义图片边长
-
-会生成 12 张图: 9 张黑箭头 (4 方向 × {干净, 噪声, 旋转}) + 3 张彩色反例.
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import argparse

@@ -1,1 +1,1 @@
-"""PC UI 子包（PyQt5）。"""
+# -*- coding: utf-8 -*-

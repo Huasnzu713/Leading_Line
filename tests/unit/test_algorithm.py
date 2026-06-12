@@ -1,32 +1,25 @@
-"""引导线算法单元测试。
-
-合并自原 tests/ 下的 8 个独立脚本（smoke / edges / jitter / straight / steer_response /
-color_shift / degenerate / multi_blob），保持原有覆盖度，pytest 风格的
-`def test_xxx()` + `if __name__ == "__main__"` 守护，与 tests/unit/test_qr_*.py 风格一致。
-
-跑法::
-
-    python tests/unit/test_algorithm.py            # 全部
-    python -m tests.unit.test_algorithm            # 同样
-    pytest tests/unit/test_algorithm.py            # 装 pytest 时也能跑
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import sys
 import time
 from pathlib import Path
 
-# 测试在 tests/unit/，算法在项目根的 vehicle/ + protocol/
+# 测试在 tests/unit/；算法实现已迁入 ros2_pkgs/leading_line/，从那里 import
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
+
+_LEADING_LINE_PARENT = _PROJECT_ROOT / "ros2_pkgs" / "leading_line"
+if str(_LEADING_LINE_PARENT) not in sys.path:
+    sys.path.insert(0, str(_LEADING_LINE_PARENT))
 
 import numpy as np
 import cv2
 import yaml
 
-from vehicle.algo import color_segmenter, path_planner
-from vehicle.algo.path_planner import PathSmoother
+from leading_line.algo import color_segmenter, path_planner
+from leading_line.algo.path_planner import PathSmoother
 from protocol import select_mode
 
 
@@ -71,7 +64,7 @@ def _process(img: np.ndarray, cfg: dict):
     min_road_px = int(cfg.get("filter", {}).get("min_road_area_px", 0))
     road_mask = color_segmenter.keep_largest_component(road_mask, min_area=min_road_px)
     edges = path_planner.plan(road_mask, cfg)
-    from vehicle.algo import controller
+    from leading_line.algo import controller
     steer, speed, lookahead = controller.decide(
         edges["center"], img.shape[1], cfg["controller"]
     )

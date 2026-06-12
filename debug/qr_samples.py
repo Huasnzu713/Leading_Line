@@ -1,14 +1,4 @@
-"""生成测试用 QR 图。
-
-依赖：qrcode 库（pip install qrcode）。
-OpenCV 4.13 自带的 QRCodeEncoder 在本环境抛 C++ 异常，所以生成侧
-换用 `qrcode` 这个纯 Python 包；解码侧仍然用 cv2.QRCodeDetector，
-两边互不干扰。
-
-用法：
-    python qr_make_test.py                 # 生成默认几张策略 QR
-    python qr_make_test.py --out qr_sample  # 指定输出目录
-"""
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import argparse
